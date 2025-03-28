@@ -1,4 +1,5 @@
 'use client';
+import Image from "next/image";
 import React from "react";
 import {
   AreaChart,
@@ -9,7 +10,6 @@ import {
   ComposedChart,
   Bar,
   Tooltip,
-  Legend,
   Line,
   ResponsiveContainer,
 } from 'recharts';
@@ -105,7 +105,7 @@ export default function AuctionPage() {
     { seat: "012", price: "$12,997.58" }
   ];
 
-  const InfoRow = ({ label, value, bold = false }) => (
+  const InfoRow = ({ label, value, bold = false }: { label: string; value: string; bold?: boolean }) => (
     <div className="flex mt-5">
       <span className="w-1/2 text-sm text-white font-bold">{label}</span>
       <span className={`w-1/2 text-white ${bold ? 'font-bold text-2xl' : 'font-normal text-sm'}`}>
@@ -113,6 +113,7 @@ export default function AuctionPage() {
       </span>
     </div>
   );
+  
 
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
@@ -153,7 +154,7 @@ export default function AuctionPage() {
       <div className="flex flex-col md:flex-row justify-between gap-7 mt-8">
         <div className="w-full md:w-[20%]">
           <h3 className="text-xl text-white font-bold">{yachtInfo.title}</h3>
-          <img src={yachtInfo.image} className="my-4 w-full" alt="Yacht" />
+          <Image width={'100'} height={'100'} src={yachtInfo.image} className="my-4 w-full" alt="Yacht" />
 
           {yachtInfo.details.map((detail, index) => (
             <InfoRow
