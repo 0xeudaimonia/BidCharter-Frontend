@@ -55,17 +55,17 @@ export default function AuctionPage() {
   };
 
   const yachtInfo = {
-    title: "YOLO Charter in Croatia",
-    image: "/yacht.jpg",
+    title: "KING BENJI Yacht Charter",
+    image: "/yacht.png",
     details: [
-      { label: "Guests:", value: "up to 36" },
+      { label: "Guests:", value: "up to 10" },
       {
         label: "Availability:",
         value: `21.06-28.06\n28.06-05.07\n28.08-30.08`
       },
       {
         label: "Reserve Price (weekly):",
-        value: "$65,000.00",
+        value: "$300,000.00",
         bold: true
       },
       { label: "Entry Fee:", value: "$1,000.00" },
