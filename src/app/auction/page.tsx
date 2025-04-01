@@ -67,7 +67,7 @@ export default function AuctionPage() {
       {
         label: "Reserve Price (weekly):",
         value: "$300,000.00",
-        bold: true
+        bold: true,
       },
       { label: "Entry Fee:", value: "$1,000.00" },
       { label: "Blind Bid:", value: "$12,000.00" },
