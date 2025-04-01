@@ -133,9 +133,6 @@ export default function AuctionPage() {
         <h3 className="text-2xl text-white font-inter font-extrabold">
           {auctionInfo.title}
         </h3>
-        {/* <button className="cursor-pointer text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3 mt-4 md:mt-0">
-          Wallet Connected
-        </button> */}
         <ConnectButton />
       </header>
 
