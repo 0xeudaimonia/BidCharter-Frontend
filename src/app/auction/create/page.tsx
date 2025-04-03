@@ -1,7 +1,8 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { contractAddress } from "../../../../libs/constants";
+import { charterFactoryContractAddress } from "@/libs/constants";
+import { charterFactoryAbi } from "@/libs/CharterFactory";
 import {
   useReadContract,
   useReadContracts,
@@ -9,8 +10,7 @@ import {
   useWriteContract,
 } from "wagmi";
 import { useEffect, useMemo, useState } from "react";
-import { abi } from "../../../../libs/abi";
-import LoadingSkeleton from "../../../../components/LoadingSkeleton";
+import LoadingSkeleton from "@/components/LoadingSkeleton";
 import { toast } from "sonner";
 import { Abi } from "viem";
 
@@ -47,16 +47,16 @@ export default function AuctionCreatePage() {
 
   const { data: totalAuctions, isLoading: isTotalAuctionsLoading } =
     useReadContract({
-      address: contractAddress,
-      abi,
+      address: charterFactoryContractAddress,
+      abi: charterFactoryAbi,
       functionName: "getTotalAuctions",
     }) as { data: bigint | undefined; isLoading: boolean };
 
   const auctionContracts = useMemo(() => {
     if (!totalAuctions) return [];
     return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
-      address: contractAddress,
-      abi: abi as Abi,
+      address: charterFactoryContractAddress,
+      abi: charterFactoryAbi as Abi,
       functionName: "getAuctionAddress",
       args: [auctionId] as const,
     }));
@@ -111,8 +111,8 @@ export default function AuctionCreatePage() {
     }
     try {
       writeContract({
-        abi,
-        address: contractAddress,
+        abi: charterFactoryAbi,
+        address: charterFactoryContractAddress,
         functionName: "createAuction",
         args: [BigInt(seatPrice), BigInt(reserves)],
       });
@@ -136,8 +136,8 @@ export default function AuctionCreatePage() {
   }, [auctionAddresses]);
 
   useWatchContractEvent({
-    address: contractAddress,
-    abi,
+    address: charterFactoryContractAddress,
+    abi: charterFactoryAbi,
     eventName: "AuctionCreated",
     onLogs: (logs) => {
       console.log("New auction created:", logs);
