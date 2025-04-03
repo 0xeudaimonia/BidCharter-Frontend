@@ -8,10 +8,11 @@ import {
   useWatchContractEvent,
   useWriteContract,
 } from "wagmi";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { abi } from "../../../../libs/abi";
 import LoadingSkeleton from "../../../../components/LoadingSkeleton";
 import { toast } from "sonner";
+import { Abi } from "viem";
 
 type Auction = {
   auctionId: number;
@@ -51,24 +52,15 @@ export default function AuctionCreatePage() {
       functionName: "getTotalAuctions",
     }) as { data: bigint | undefined; isLoading: boolean };
 
-  // const auctionContracts = useMemo(() => {
-  //   if (!totalAuctions) return [];
-  //   return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
-  //     address: contractAddress,
-  //     abi,
-  //     functionName: "getAuctionAddress",
-  //     args: [auctionId] as const,
-  //   }));
-  // }, [totalAuctions]);
-
-  const auctionContracts = totalAuctions 
-    ? [...Array(Number(totalAuctions)).keys()].map((auctionId: number) => ({
-      address: contractAddress as `0x${string}`,
-      abi,
+  const auctionContracts = useMemo(() => {
+    if (!totalAuctions) return [];
+    return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
+      address: contractAddress,
+      abi: abi as Abi,
       functionName: "getAuctionAddress",
       args: [auctionId] as const,
-  }))
-  : [];
+    }));
+  }, [totalAuctions]);
 
   const {
     data: auctionAddresses,
