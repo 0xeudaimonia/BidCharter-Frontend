@@ -8,7 +8,7 @@ import {
   useWatchContractEvent,
   useWriteContract,
 } from "wagmi";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { abi } from "../../../../libs/abi";
 import LoadingSkeleton from "../../../../components/LoadingSkeleton";
 import { toast } from "sonner";
@@ -56,11 +56,11 @@ export default function AuctionCreatePage() {
     if (!totalAuctions) return [];
     return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
       address: contractAddress,
-      abi: abi as Abi,
+      abi,
       functionName: "getAuctionAddress",
       args: [auctionId] as const,
-    }));
-  }, [totalAuctions]);
+  }))
+  : [];
 
   const {
     data: auctionAddresses,
@@ -69,7 +69,7 @@ export default function AuctionCreatePage() {
   } = useReadContracts({
     contracts: auctionContracts,
   }) as {
-    data: { result: string }[] | undefined;
+    data: { result: `0x${string}` }[] | undefined;
     isLoading: boolean;
     refetch: () => void;
   };
