@@ -14,33 +14,12 @@ import LoadingSkeleton from "@/src/components/LoadingSkeleton";
 import { toast } from "sonner";
 import { Abi } from "viem";
 
-type Auction = {
-  auctionId: number;
-  auctionAddress: string;
-  time: string;
-};
-
-type AuctionInfo = {
-  title: string;
-  round: number;
-  myPosition: string;
-  targetPrice: string;
-  actionsLeft: number;
-  myStake: string;
-  auctionTime: string;
-};
-
-type InputDetail = {
-  inputLabel: string;
-  priceTag: string;
-};
-
-type InputValues = Record<string, string>;
+import { AuctionCreate } from "@/src/types";
 
 export default function AuctionCreatePage() {
   // State
-  const [inputValues, setInputValues] = useState<InputValues>({});
-  const [auctionData, setAuctionData] = useState<Auction[]>([]);
+  const [inputValues, setInputValues] = useState<AuctionCreate.InputValues>({});
+  const [auctionData, setAuctionData] = useState<AuctionCreate.Auction[]>([]);
 
   // Wagmi hooks
   const { writeContract, isPending, error: writeError } = useWriteContract();
@@ -75,7 +54,7 @@ export default function AuctionCreatePage() {
   };
 
   // Constants
-  const auctionInfo: AuctionInfo = {
+  const auctionInfo: AuctionCreate.AuctionInfo = {
     title: "BidCharter Testnet",
     round: 8,
     myPosition: "$12,521.00",
@@ -85,32 +64,45 @@ export default function AuctionCreatePage() {
     auctionTime: "03:11:28",
   };
 
-  const inputDetails: InputDetail[] = [
+  const inputDetails: AuctionCreate.InputDetail[] = [
     { inputLabel: "Seat price", priceTag: "$2000.00" },
     { inputLabel: "Reserves", priceTag: "$250,000.00" },
   ];
 
   // Handlers
   const handleInputChange = (label: string, value: string) => {
-    setInputValues((prev) => ({
+    setInputValues((prev: AuctionCreate.InputValues) => ({
       ...prev,
       [label]: value,
     }));
   };
 
-  const handleCreateAuction = () => {
+  const handleCreateAuction = async () => {
     const seatPrice = inputValues["Seat price"];
     const reserves = inputValues["Reserves"];
+    
+    // Improved input validation
     if (!seatPrice || !reserves) {
-      toast.error("All fields are required.", {
-        style: { backgroundColor: "red", color: "white" },
-        duration: 4000,
-        dismissible: true,
-      });
+      toast.error("All fields are required");
       return;
     }
+
+    // Validate numeric inputs
+    const seatPriceNum = Number(seatPrice);
+    const reservesNum = Number(reserves);
+    
+    if (isNaN(seatPriceNum) || isNaN(reservesNum)) {
+      toast.error("Please enter valid numbers");
+      return;
+    }
+
+    if (seatPriceNum <= 0 || reservesNum <= 0) {
+      toast.error("Values must be greater than 0");
+      return;
+    }
+
     try {
-      writeContract({
+      await writeContract({
         abi: charterFactoryAbi,
         address: charterFactoryContractAddress,
         functionName: "createAuction",
@@ -119,7 +111,7 @@ export default function AuctionCreatePage() {
       setInputValues({});
     } catch (error) {
       console.error("Failed to create auction:", error);
-      toast.error("Failed to create auction");
+      toast.error("Failed to create auction. Please try again.");
     }
   };
 
@@ -127,12 +119,13 @@ export default function AuctionCreatePage() {
   useEffect(() => {
     if (!auctionAddresses) return;
 
-    const auctions: Auction[] = auctionAddresses.map((address, index) => ({
+    const auctions: AuctionCreate.Auction[] = auctionAddresses.map((address, index) => ({
       auctionId: index,
       auctionAddress: address.result,
       time: new Date().toUTCString(),
     }));
-    setAuctionData(auctions);
+    // Sort auctions to show latest first
+    setAuctionData(auctions.reverse());
   }, [auctionAddresses]);
 
   useWatchContractEvent({
@@ -141,6 +134,14 @@ export default function AuctionCreatePage() {
     eventName: "AuctionCreated",
     onLogs: (logs) => {
       console.log("New auction created:", logs);
+      const log = logs[0] as unknown as {
+        args: { auctionId: number; auctionAddress: `0x${string}`; time: string }
+      };
+      setAuctionData((prev) => [...prev, {
+        auctionId: log.args.auctionId,
+        auctionAddress: log.args.auctionAddress,
+        time: new Date().toUTCString(),
+      }]);
       refetch();
     },
     onError: (error) => {

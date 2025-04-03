@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import App from "@/src/components/App";
+import Provider from "@/src/components/Provider";
 import { Toaster } from "@/src/components/ui/sonner";
 import "@/src/app/globals.css";
 
@@ -13,10 +13,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <App>
+        <Provider>
           <main>{children}</main>
           <Toaster />
-        </App>
+        </Provider>
       </body>
     </html>
   );
