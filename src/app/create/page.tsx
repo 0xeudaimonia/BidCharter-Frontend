@@ -71,25 +71,38 @@ export default function AuctionCreatePage() {
 
   // Handlers
   const handleInputChange = (label: string, value: string) => {
-    setInputValues((prev) => ({
+    setInputValues((prev: AuctionCreate.InputValues) => ({
       ...prev,
       [label]: value,
     }));
   };
 
-  const handleCreateAuction = () => {
+  const handleCreateAuction = async () => {
     const seatPrice = inputValues["Seat price"];
     const reserves = inputValues["Reserves"];
+    
+    // Improved input validation
     if (!seatPrice || !reserves) {
-      toast.error("All fields are required.", {
-        style: { backgroundColor: "red", color: "white" },
-        duration: 4000,
-        dismissible: true,
-      });
+      toast.error("All fields are required");
       return;
     }
+
+    // Validate numeric inputs
+    const seatPriceNum = Number(seatPrice);
+    const reservesNum = Number(reserves);
+    
+    if (isNaN(seatPriceNum) || isNaN(reservesNum)) {
+      toast.error("Please enter valid numbers");
+      return;
+    }
+
+    if (seatPriceNum <= 0 || reservesNum <= 0) {
+      toast.error("Values must be greater than 0");
+      return;
+    }
+
     try {
-      writeContract({
+      await writeContract({
         abi: charterFactoryAbi,
         address: charterFactoryContractAddress,
         functionName: "createAuction",
@@ -98,7 +111,7 @@ export default function AuctionCreatePage() {
       setInputValues({});
     } catch (error) {
       console.error("Failed to create auction:", error);
-      toast.error("Failed to create auction");
+      toast.error("Failed to create auction. Please try again.");
     }
   };
 
@@ -111,7 +124,8 @@ export default function AuctionCreatePage() {
       auctionAddress: address.result,
       time: new Date().toUTCString(),
     }));
-    setAuctionData(auctions);
+    // Sort auctions to show latest first
+    setAuctionData(auctions.reverse());
   }, [auctionAddresses]);
 
   useWatchContractEvent({
