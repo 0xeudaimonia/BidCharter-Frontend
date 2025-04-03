@@ -1,4 +1,4 @@
-export const abi = [
+export const charterFactoryAbi = [
   {
     inputs: [
       { internalType: "address", name: "_usdt", type: "address" },
