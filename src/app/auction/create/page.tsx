@@ -12,6 +12,7 @@ import { useEffect, useMemo, useState } from "react";
 import { abi } from "../../../../libs/abi";
 import LoadingSkeleton from "../../../../components/LoadingSkeleton";
 import { toast } from "sonner";
+import { Abi } from "viem";
 
 type Auction = {
   auctionId: number;
@@ -55,7 +56,7 @@ export default function AuctionCreatePage() {
     if (!totalAuctions) return [];
     return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
       address: contractAddress,
-      abi,
+      abi: abi as Abi,
       functionName: "getAuctionAddress",
       args: [auctionId] as const,
     }));
