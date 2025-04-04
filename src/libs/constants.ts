@@ -1,3 +1,13 @@
+// const isValidAddress = (addr: string | undefined): addr is `0x${string}` =>
+//   typeof addr === "string" && addr.startsWith("0x");
+
+// export const charterFactoryContractAddress: `0x${string}` = isValidAddress(
+//   process.env.NEXT_PUBLIC_CHARTER_FACTORY_CONTRACT_ADDRESS
+// )
+//   ? process.env.NEXT_PUBLIC_CHARTER_FACTORY_CONTRACT_ADDRESS
+//   : "0xaDa0EA621CB247013B93731074Be826A5d50c349";
+
+
 const isValidAddress = (addr: string | undefined): addr is `0x${string}` =>
   typeof addr === "string" && addr.startsWith("0x");
 
