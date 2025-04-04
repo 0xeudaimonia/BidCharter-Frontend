@@ -1,8 +1,8 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { charterFactoryContractAddress } from "@/src/libs/constants";
-import { charterFactoryAbi } from "@/src/libs/CharterFactory";
+import { charterFactoryContractAddress } from "@/libs/constants";
+import { charterFactoryAbi } from "@/libs/CharterFactory";
 import {
   useReadContract,
   useReadContracts,
@@ -80,7 +80,7 @@ export default function AuctionCreatePage() {
   const handleCreateAuction = async () => {
     const seatPrice = inputValues["Seat price"];
     const reserves = inputValues["Reserves"];
-    
+
     // Improved input validation
     if (!seatPrice || !reserves) {
       toast.error("All fields are required");
@@ -90,7 +90,7 @@ export default function AuctionCreatePage() {
     // Validate numeric inputs
     const seatPriceNum = Number(seatPrice);
     const reservesNum = Number(reserves);
-    
+
     if (isNaN(seatPriceNum) || isNaN(reservesNum)) {
       toast.error("Please enter valid numbers");
       return;
@@ -119,11 +119,13 @@ export default function AuctionCreatePage() {
   useEffect(() => {
     if (!auctionAddresses) return;
 
-    const auctions: AuctionCreate.Auction[] = auctionAddresses.map((address, index) => ({
-      auctionId: index,
-      auctionAddress: address.result,
-      time: new Date().toUTCString(),
-    }));
+    const auctions: AuctionCreate.Auction[] = auctionAddresses.map(
+      (address, index) => ({
+        auctionId: index,
+        auctionAddress: address.result,
+        time: new Date().toUTCString(),
+      })
+    );
     // Sort auctions to show latest first
     setAuctionData(auctions.reverse());
   }, [auctionAddresses]);
@@ -135,13 +137,20 @@ export default function AuctionCreatePage() {
     onLogs: (logs) => {
       console.log("New auction created:", logs);
       const log = logs[0] as unknown as {
-        args: { auctionId: number; auctionAddress: `0x${string}`; time: string }
+        args: {
+          auctionId: number;
+          auctionAddress: `0x${string}`;
+          time: string;
+        };
       };
-      setAuctionData((prev) => [...prev, {
-        auctionId: log.args.auctionId,
-        auctionAddress: log.args.auctionAddress,
-        time: new Date().toUTCString(),
-      }]);
+      setAuctionData((prev) => [
+        ...prev,
+        {
+          auctionId: log.args.auctionId,
+          auctionAddress: log.args.auctionAddress,
+          time: new Date().toUTCString(),
+        },
+      ]);
       refetch();
     },
     onError: (error) => {

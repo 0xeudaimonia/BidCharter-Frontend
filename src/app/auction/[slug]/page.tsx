@@ -22,58 +22,90 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { formatEther } from "viem";
-import { useParams } from "next/navigation"; // For dynamic route params
-import { charterFactoryContractAddress } from "@/src/libs/constants"; // Adjust path
-import { charterAuctionAbi } from "@/src/libs/CharterAuction"; // Assuming full ABI is here
-import { charterFactoryAbi } from "@/src/libs/CharterFactory"; // Assuming full ABI is here
+import { useParams } from "next/navigation";
+import { charterFactoryContractAddress } from "@/libs/constants";
+import { charterAuctionAbi } from "@/libs/CharterAuction";
+import { charterFactoryAbi } from "@/libs/CharterFactory";
+import { abi as erc721ABI } from "@/libs/abi";
 
-// ERC721 ABI for NFT metadata
-const erc721ABI = [
-  {
-    name: "tokenURI",
-    type: "function",
-    stateMutability: "view",
-    inputs: [{ type: "uint256" }],
-    outputs: [{ type: "string" }],
-  },
-] as const;
+const InfoRow = ({
+  label,
+  value,
+  bold = false,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+}) => (
+  <div className="flex mt-5">
+    <span className="w-1/2 text-sm text-white font-bold">{label}</span>
+    <span
+      className={`w-1/2 text-white ${
+        bold ? "font-bold text-2xl" : "font-normal text-sm"
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);
 
 export default function AuctionByIdPage() {
   const params = useParams();
-  const { slug } = params; // Extracting the slug (auctionId) from the URL
-  const auctionId = slug as string; // Type assertion, assuming slug is the auction ID
+  const { slug } = params;
+  const auctionId = slug as string;
 
   const { address } = useAccount();
-  const { writeContract, data: txHash } = useWriteContract();
+  const [error, setError] = useState<string | null>(null);
+
+  const { writeContract, data: txHash } = useWriteContract({
+    onError: (err) => {
+      console.error("Write Contract Error:", err);
+      setError("Failed to execute contract function.");
+    },
+  });
+
   const { isLoading: isTxLoading, isSuccess: isTxSuccess } =
     useWaitForTransactionReceipt({ hash: txHash });
 
-  // Fetch auction address from factory
-  const { data: auctionAddress } = useReadContract({
+  const { data: auctionAddress, error: auctionAddressError } = useReadContract({
     address: charterFactoryContractAddress,
     abi: charterFactoryAbi,
     functionName: "auctions",
-    args: [BigInt(auctionId || "1")], // Fallback to "1" if slug is undefined
+    args: [BigInt(auctionId || "1")],
+    onError: (err) => {
+      console.error("Read Contract Error (auctionAddress):", err);
+      setError("Failed to fetch auction address.");
+    },
   });
 
-  // Fetch NFT contract address from factory
-  const { data: nftAddress } = useReadContract({
+  const { data: nftAddress, error: nftAddressError } = useReadContract({
     address: charterFactoryContractAddress,
     abi: charterFactoryAbi,
     functionName: "nft",
+    onError: (err) => {
+      console.error("Read Contract Error (nftAddress):", err);
+      setError("Failed to fetch NFT address.");
+    },
   });
 
-  // Fetch auction data
   const { data: currentRound } = useReadContract({
     address: auctionAddress,
     abi: charterAuctionAbi,
     functionName: "currentRound",
+    onError: (err) => {
+      console.error("Read Contract Error (currentRound):", err);
+      setError("Failed to fetch current round.");
+    },
   });
 
   const { data: entryFee } = useReadContract({
     address: auctionAddress,
     abi: charterAuctionAbi,
     functionName: "entryFee",
+    onError: (err) => {
+      console.error("Read Contract Error (entryFee):", err);
+      setError("Failed to fetch entry fee.");
+    },
   });
 
   const { data: rewards } = useReadContract({
@@ -81,12 +113,20 @@ export default function AuctionByIdPage() {
     abi: charterAuctionAbi,
     functionName: "rewards",
     args: [address || "0x0"],
+    onError: (err) => {
+      console.error("Read Contract Error (rewards):", err);
+      setError("Failed to fetch rewards.");
+    },
   });
 
   const { data: positions } = useReadContract({
     address: auctionAddress,
     abi: charterAuctionAbi,
     functionName: "getRoundPositions",
+    onError: (err) => {
+      console.error("Read Contract Error (positions):", err);
+      setError("Failed to fetch positions.");
+    },
   });
 
   const { data: targetPrice } = useReadContract({
@@ -94,34 +134,47 @@ export default function AuctionByIdPage() {
     abi: charterAuctionAbi,
     functionName: "getTargetPrice",
     args: [currentRound || 0n],
+    onError: (err) => {
+      console.error("Read Contract Error (targetPrice):", err);
+      setError("Failed to fetch target price.");
+    },
   });
 
   const { data: winner } = useReadContract({
     address: auctionAddress,
     abi: charterAuctionAbi,
     functionName: "winner",
+    onError: (err) => {
+      console.error("Read Contract Error (winner):", err);
+      setError("Failed to fetch winner.");
+    },
   });
 
   const { data: nftId } = useReadContract({
     address: auctionAddress,
     abi: charterAuctionAbi,
     functionName: "nftId",
+    onError: (err) => {
+      console.error("Read Contract Error (nftId):", err);
+      setError("Failed to fetch NFT ID.");
+    },
   });
 
-  // Fetch NFT metadata
   const { data: tokenURI } = useReadContract({
     address: nftAddress,
     abi: erc721ABI,
     functionName: "tokenURI",
     args: [nftId || 0n],
+    onError: (err) => {
+      console.error("Read Contract Error (tokenURI):", err);
+      setError("Failed to fetch token URI.");
+    },
   });
 
-  // State for chart data and NFT metadata
   const [chartData, setChartData] = useState<any[]>([]);
   const [barData, setBarData] = useState<any[]>([]);
   const [nftMetadata, setNftMetadata] = useState<any>(null);
 
-  // Process positions into chart data
   useEffect(() => {
     if (positions && currentRound !== undefined) {
       const formattedData = positions.map((pos: any, index: number) => ({
@@ -142,19 +195,19 @@ export default function AuctionByIdPage() {
     }
   }, [positions, currentRound]);
 
-  // Fetch and parse NFT metadata
   useEffect(() => {
     if (tokenURI) {
       fetch(tokenURI)
         .then((res) => res.json())
         .then((data) => setNftMetadata(data))
-        .catch((err) => console.error("Failed to fetch NFT metadata:", err));
+        .catch((err) => {
+          console.error("Failed to fetch NFT metadata:", err);
+          setError("Failed to fetch NFT metadata.");
+        });
     }
   }, [tokenURI]);
 
-  console.log("NFT Metadata:", nftMetadata);
-
-  // Auction info
+  // Auction info derived from contract data
   const auctionInfo = {
     title: `BidCharter Auction #${auctionId}`,
     round: currentRound ? Number(currentRound) : 0,
@@ -165,12 +218,12 @@ export default function AuctionByIdPage() {
     targetPrice: targetPrice
       ? `$${Number(formatEther(targetPrice)).toFixed(2)}`
       : "$0.00",
-    actionsLeft: 6, // Static for now
-    myStake: "$8,000.00", // Static for now
-    auctionTime: "03:11:28", // Static for now
+    actionsLeft: "6", // Static for now, could be dynamic
+    myStake: "$8,000.00", // Static for now, could track total bids
+    auctionTime: "03:11:28", // Static for now, could use a timer
   };
 
-  // Yacht info from NFT metadata
+  // Yacht info derived from NFT metadata and contract data
   const yachtInfo = {
     title: nftMetadata?.name || "Charter Auction Item",
     image: nftMetadata?.image || "/yacht.png",
@@ -189,7 +242,6 @@ export default function AuctionByIdPage() {
     ],
   };
 
-  // Interaction functions
   const handleBidPosition = (positionIndex: number) => {
     writeContract({
       address: auctionAddress,
@@ -231,31 +283,10 @@ export default function AuctionByIdPage() {
     });
   };
 
-  const InfoRow = ({
-    label,
-    value,
-    bold = false,
-  }: {
-    label: string;
-    value: string;
-    bold?: boolean;
-  }) => (
-    <div className="flex mt-5">
-      <span className="w-1/2 text-sm text-white font-bold">{label}</span>
-      <span
-        className={`w-1/2 text-white ${
-          bold ? "font-bold text-2xl" : "font-normal text-sm"
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  );
-
   if (!auctionAddress) {
     return (
       <div className="min-h-screen bg-[#202020] text-white p-4">
-        Loading auction data...
+        {error || "Loading auction data..."}
       </div>
     );
   }
@@ -271,7 +302,7 @@ export default function AuctionByIdPage() {
 
       <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <Link href={"/auction"}>
+          <Link href="/auction">
             <p className="text-sm text-white font-normal">
               Back to List of Auctions
             </p>
@@ -502,6 +533,8 @@ export default function AuctionByIdPage() {
           </div>
         </div>
       </div>
+
+      {error && <div className="mt-4 text-red-500 text-center">{error}</div>}
     </div>
   );
 }
