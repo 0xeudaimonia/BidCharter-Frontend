@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   AreaChart,
   Area,
@@ -224,22 +224,29 @@ export default function AuctionByIdPage() {
   };
 
   // Yacht info derived from NFT metadata and contract data
-  const yachtInfo = {
+  const auctionDetail = useMemo(() => {
+    if (nftMetadata && entryFee) {
+      return [
+        {
+          label: "Entry Fee:",
+          value: entryFee
+            ? `$${Number(formatEther(entryFee)).toFixed(2)}`
+            : "$0.00",
+        },
+        ...(nftMetadata?.attributes?.map((attr: any) => ({
+          label: `${attr.trait_type}:`,
+          value: attr.value,
+          bold: attr.trait_type === "Reserve Price",
+        })) || []),
+      ];
+    }
+    return [];
+  }, [nftMetadata, entryFee]);
+
+  const auctionItemInfo = {
     title: nftMetadata?.name || "Charter Auction Item",
-    image: nftMetadata?.image || "/yacht.png",
-    details: [
-      {
-        label: "Entry Fee:",
-        value: entryFee
-          ? `$${Number(formatEther(entryFee)).toFixed(2)}`
-          : "$0.00",
-      },
-      ...(nftMetadata?.attributes?.map((attr: any) => ({
-        label: `${attr.trait_type}:`,
-        value: attr.value,
-        bold: attr.trait_type === "Reserve Price",
-      })) || []),
-    ],
+    image: nftMetadata?.image || "/auctionError.png",
+    details: auctionDetail,
   };
 
   const handleBidPosition = (positionIndex: number) => {
@@ -335,15 +342,17 @@ export default function AuctionByIdPage() {
 
       <div className="flex flex-col md:flex-row justify-between gap-7 mt-8">
         <div className="w-full md:w-[20%]">
-          <h3 className="text-xl text-white font-bold">{yachtInfo.title}</h3>
+          <h3 className="text-xl text-white font-bold">
+            {auctionItemInfo.title}
+          </h3>
           <Image
             width={100}
             height={100}
-            src={yachtInfo.image}
+            src={auctionItemInfo.image}
             className="my-4 w-full"
             alt="Auction Item"
           />
-          {yachtInfo.details.map((detail, index) => (
+          {auctionItemInfo.details.map((detail, index) => (
             <InfoRow
               key={index}
               label={detail.label}
