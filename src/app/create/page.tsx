@@ -1,8 +1,8 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { charterFactoryContractAddress } from "@/libs/constants";
-import { charterFactoryAbi } from "@/libs/CharterFactory";
+import { charterFactoryContractAddress } from "@/src/libs/constants";
+import { charterFactoryAbi } from "@/src/libs/CharterFactory";
 import {
   useReadContract,
   useReadContracts,

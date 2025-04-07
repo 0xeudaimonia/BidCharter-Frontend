@@ -1,8 +1,8 @@
 "use client";
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { charterFactoryContractAddress } from "@/libs/constants";
-import { charterFactoryAbi } from "@/libs/CharterFactory";
+import { charterFactoryContractAddress } from "@/src/libs/constants";
+import { charterFactoryAbi } from "@/src/libs/CharterFactory";
 import {
   useReadContract,
   useReadContracts,
@@ -15,7 +15,7 @@ import { Abi } from "viem";
 import { AuctionCreate } from "@/src/types";
 import Link from "next/link";
 
-export default function AuctionCreatePage() {
+export default function AuctionListPage() {
   // State
   // const [inputValues, setInputValues] = useState<AuctionCreate.InputValues>({});
   const [auctionData, setAuctionData] = useState<AuctionCreate.Auction[]>([]);

@@ -23,20 +23,18 @@ import {
 } from "wagmi";
 import { formatEther } from "viem";
 import { useParams } from "next/navigation";
-import { charterFactoryContractAddress } from "@/libs/constants";
-import { charterAuctionAbi } from "@/libs/CharterAuction";
-import { charterFactoryAbi } from "@/libs/CharterFactory";
-import { abi as erc721ABI } from "@/libs/abi";
+import { charterFactoryContractAddress } from "@/src/libs/constants";
+import { charterAuctionAbi } from "@/src/libs/CharterAuction";
+import { charterFactoryAbi } from "@/src/libs/CharterFactory";
+import { abi as erc721ABI } from "@/src/libs/abi";
 
-const InfoRow = ({
-  label,
-  value,
-  bold = false,
-}: {
+type InfoRowProps = {
   label: string;
   value: string;
   bold?: boolean;
-}) => (
+};
+
+const InfoRow = ({ label, value, bold = false }: InfoRowProps) => (
   <div className="flex mt-5">
     <span className="w-1/2 text-sm text-white font-bold">{label}</span>
     <span
