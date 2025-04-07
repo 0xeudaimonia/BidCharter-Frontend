@@ -2,7 +2,7 @@
 import Image from "next/image";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   AreaChart,
   Area,
@@ -22,109 +22,210 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { formatEther } from "viem";
-import { useParams } from "next/navigation"; // For dynamic route params
-import { charterFactoryContractAddress } from "@/src/libs/constants"; // Adjust path
-import { charterAuctionAbi } from "@/src/libs/CharterAuction"; // Assuming full ABI is here
-import { charterFactoryAbi } from "@/src/libs/CharterFactory"; // Assuming full ABI is here
+import { useParams } from "next/navigation";
+import { charterFactoryContractAddress } from "@/src/libs/constants";
+import { charterAuctionAbi } from "@/src/libs/CharterAuction";
+import { charterFactoryAbi } from "@/src/libs/CharterFactory";
+import { abi as erc721ABI } from "@/src/libs/abi";
 
-// ERC721 ABI for NFT metadata
-const erc721ABI = [
-  {
-    name: "tokenURI",
-    type: "function",
-    stateMutability: "view",
-    inputs: [{ type: "uint256" }],
-    outputs: [{ type: "string" }],
-  },
-] as const;
+type InfoRowProps = {
+  label: string;
+  value: string;
+  bold?: boolean;
+};
+
+const InfoRow = ({ label, value, bold = false }: InfoRowProps) => (
+  <div className="flex mt-5">
+    <span className="w-1/2 text-sm text-white font-bold">{label}</span>
+    <span
+      className={`w-1/2 text-white ${
+        bold ? "font-bold text-2xl" : "font-normal text-sm"
+      }`}
+    >
+      {value}
+    </span>
+  </div>
+);
 
 export default function AuctionByIdPage() {
   const params = useParams();
-  const { slug } = params; // Extracting the slug (auctionId) from the URL
-  const auctionId = slug as string; // Type assertion, assuming slug is the auction ID
+  const { slug } = params;
+  const auctionId = slug as string;
 
   const { address } = useAccount();
+  const [error, setError] = useState<string | null>(null);
+
   const { writeContract, data: txHash } = useWriteContract();
+
   const { isLoading: isTxLoading, isSuccess: isTxSuccess } =
     useWaitForTransactionReceipt({ hash: txHash });
 
-  // Fetch auction address from factory
-  const { data: auctionAddress } = useReadContract({
-    address: charterFactoryContractAddress,
+  useEffect(() => {
+    if (isTxSuccess) {
+      console.log("Transaction was successful!");
+      setError(null); // Clear any previous errors
+    }
+  }, [isTxSuccess]);
+
+  const { data: auctionAddress, error: auctionAddressError } = useReadContract({
+    address: charterFactoryContractAddress as `0x${string}`,
     abi: charterFactoryAbi,
-    functionName: "auctions",
-    args: [BigInt(auctionId || "1")], // Fallback to "1" if slug is undefined
+    functionName: "getAuctionAddress",
+    args: [BigInt(auctionId)],
+    // Error handling moved to useEffect
   });
 
-  // Fetch NFT contract address from factory
-  const { data: nftAddress } = useReadContract({
-    address: charterFactoryContractAddress,
-    abi: charterFactoryAbi,
+  useEffect(() => {
+    if (auctionAddressError) {
+      setError("Failed to fetch auction address.");
+    } else if (auctionAddress) {
+      console.log("Auction Address fetched successfully:", auctionAddress);
+      setError(null); // Clear any previous errors
+    }
+  }, [auctionAddress, auctionAddressError]);
+
+  const { data: nftAddress, error: nftAddressError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: charterAuctionAbi,
     functionName: "nft",
+    // Error handling moved to useEffect
   });
 
-  // Fetch auction data
-  const { data: currentRound } = useReadContract({
-    address: auctionAddress,
+  useEffect(() => {
+    if (nftAddressError) {
+      setError("Failed to fetch NFT address.");
+    } else if (nftAddress) {
+      console.log("NFT Address fetched successfully:", nftAddress);
+      setError(null); // Clear any previous errors
+    }
+  }, [nftAddress, nftAddressError]);
+
+  const { data: currentRound, error: currentRoundError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
     abi: charterAuctionAbi,
     functionName: "currentRound",
   });
 
-  const { data: entryFee } = useReadContract({
-    address: auctionAddress,
+  useEffect(() => {
+    if (currentRoundError) {
+      console.error("Read Contract Error (currentRound):", currentRoundError);
+      setError("Failed to fetch current round.");
+    }
+  }, [currentRoundError]);
+
+  const { data: entryFee, error: entryFeeError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
     abi: charterAuctionAbi,
     functionName: "entryFee",
   });
 
-  const { data: rewards } = useReadContract({
-    address: auctionAddress,
+  useEffect(() => {
+    if (entryFeeError) {
+      console.error("Read Contract Error (entryFee):", entryFeeError);
+      setError("Failed to fetch entry fee.");
+    }
+  }, [entryFeeError]);
+
+  const {
+    data: rewards,
+    error: rewardsError,
+  }: { data: bigint | undefined; error: Error | null } = useReadContract({
+    address: auctionAddress as `0x${string}`,
     abi: charterAuctionAbi,
     functionName: "rewards",
     args: [address || "0x0"],
   });
 
-  const { data: positions } = useReadContract({
-    address: auctionAddress,
-    abi: charterAuctionAbi,
-    functionName: "getRoundPositions",
-  });
+  useEffect(() => {
+    if (rewardsError) {
+      console.error("Read Contract Error (rewards):", rewardsError);
+      setError("Failed to fetch rewards.");
+    }
+  }, [rewardsError]);
 
-  const { data: targetPrice } = useReadContract({
-    address: auctionAddress,
+  const { data: positions }: { data: { bidPrice: bigint }[] | undefined } =
+    useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: charterAuctionAbi,
+      functionName: "getRoundPositions",
+    });
+
+  const { data: targetPrice, error: targetPriceError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
     abi: charterAuctionAbi,
     functionName: "getTargetPrice",
-    args: [currentRound || 0n],
+    args: [
+      currentRound !== undefined ? BigInt(currentRound as number) : BigInt(0),
+    ],
   });
 
-  const { data: winner } = useReadContract({
-    address: auctionAddress,
+  useEffect(() => {
+    if (targetPriceError) {
+      console.error("Read Contract Error (targetPrice):", targetPriceError);
+      setError("Failed to fetch target price.");
+    }
+  }, [targetPriceError]);
+
+  const { data: winner, error: winnerError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
     abi: charterAuctionAbi,
     functionName: "winner",
   });
 
-  const { data: nftId } = useReadContract({
-    address: auctionAddress,
+  useEffect(() => {
+    if (winnerError) {
+      console.error("Read Contract Error (winner):", winnerError);
+      setError("Failed to fetch winner.");
+    }
+  }, [winnerError]);
+
+  const { data: nftId, error: nftIdError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
     abi: charterAuctionAbi,
     functionName: "nftId",
   });
 
-  // Fetch NFT metadata
-  const { data: tokenURI } = useReadContract({
-    address: nftAddress,
+  useEffect(() => {
+    if (nftIdError) {
+      console.error("Read Contract Error (nftId):", nftIdError);
+      setError("Failed to fetch NFT ID.");
+    }
+  }, [nftIdError]);
+
+  const { data: tokenURI, error: tokenURIError } = useReadContract({
+    address: nftAddress as `0x${string}`,
     abi: erc721ABI,
     functionName: "tokenURI",
-    args: [nftId || 0n],
+    args: [nftId || BigInt(0)],
   });
 
-  // State for chart data and NFT metadata
-  const [chartData, setChartData] = useState<any[]>([]);
-  const [barData, setBarData] = useState<any[]>([]);
-  const [nftMetadata, setNftMetadata] = useState<any>(null);
+  useEffect(() => {
+    if (tokenURIError) {
+      console.error("Read Contract Error (tokenURI):", tokenURIError);
+      setError("Failed to fetch token URI.");
+    }
+  }, [tokenURIError]);
 
-  // Process positions into chart data
+  const [chartData, setChartData] = useState<
+    { round: string; price: number; leftBid: number; rightBid: number }[]
+  >([]);
+  const [barData, setBarData] = useState<
+    { round: string; price: number; fillValue: number }[]
+  >([]);
+  const [nftMetadata, setNftMetadata] = useState<{
+    name?: string;
+    image?: string;
+    attributes?: { trait_type: string; value: string }[];
+  } | null>(null);
+
   useEffect(() => {
     if (positions && currentRound !== undefined) {
-      const formattedData = positions.map((pos: any, index: number) => ({
+      const formattedData: {
+        round: string;
+        price: number;
+        leftBid: number;
+        rightBid: number;
+      }[] = positions.map((pos: { bidPrice: bigint }, index: number) => ({
         round: `R${(Number(currentRound) + index).toString().padStart(2, "0")}`,
         price: Number(formatEther(pos.bidPrice)),
         leftBid:
@@ -132,7 +233,11 @@ export default function AuctionByIdPage() {
         rightBid:
           index >= positions.length / 2 ? Number(formatEther(pos.bidPrice)) : 0,
       }));
-      const formattedBarData = positions.map((pos: any, index: number) => ({
+      const formattedBarData: {
+        round: string;
+        price: number;
+        fillValue: number;
+      }[] = positions.map((pos: { bidPrice: bigint }, index: number) => ({
         round: `R${(Number(currentRound) + index).toString().padStart(2, "0")}`,
         price: Number(formatEther(pos.bidPrice)),
         fillValue: 1,
@@ -142,120 +247,148 @@ export default function AuctionByIdPage() {
     }
   }, [positions, currentRound]);
 
-  // Fetch and parse NFT metadata
   useEffect(() => {
     if (tokenURI) {
-      fetch(tokenURI)
-        .then((res) => res.json())
-        .then((data) => setNftMetadata(data))
-        .catch((err) => console.error("Failed to fetch NFT metadata:", err));
+      if (typeof tokenURI === "string") {
+        fetch(tokenURI)
+          .then((res) => res.json())
+          .then((data) => setNftMetadata(data))
+          .catch((err) => {
+            console.error("Failed to fetch NFT metadata:", err);
+            setError("Failed to fetch NFT metadata.");
+          });
+      } else {
+        throw new Error("Invalid tokenURI");
+      }
     }
   }, [tokenURI]);
 
-  console.log("NFT Metadata:", nftMetadata);
-
-  // Auction info
+  // Auction info derived from contract data
   const auctionInfo = {
     title: `BidCharter Auction #${auctionId}`,
     round: currentRound ? Number(currentRound) : 0,
     myPosition:
       positions && address
-        ? `$${Number(formatEther(positions[0]?.bidPrice || 0n)).toFixed(2)}`
+        ? `$${Number(
+            formatEther(positions?.[0]?.bidPrice || BigInt(0))
+          ).toFixed(2)}`
         : "$0.00",
     targetPrice: targetPrice
-      ? `$${Number(formatEther(targetPrice)).toFixed(2)}`
+      ? `$${Number(formatEther(targetPrice as bigint)).toFixed(2)}`
       : "$0.00",
-    actionsLeft: 6, // Static for now
-    myStake: "$8,000.00", // Static for now
-    auctionTime: "03:11:28", // Static for now
+    actionsLeft: "6", // Static for now, could be dynamic
+    myStake: "$8,000.00", // Static for now, could track total bids
+    auctionTime: "03:11:28", // Static for now, could use a timer
   };
 
-  // Yacht info from NFT metadata
-  const yachtInfo = {
+  // Yacht info derived from NFT metadata and contract data
+  const auctionDetail = useMemo(() => {
+    if (nftMetadata && entryFee) {
+      return [
+        {
+          label: "Entry Fee:",
+          value: entryFee
+            ? `$${Number(formatEther(entryFee as bigint)).toFixed(2)}`
+            : "$0.00",
+        },
+        ...(nftMetadata?.attributes?.map(
+          (attr: { trait_type: string; value: string }) => ({
+            label: `${attr.trait_type}:`,
+            value: attr.value,
+            bold: attr.trait_type === "Reserve Price",
+          })
+        ) || []),
+      ];
+    }
+    return [];
+  }, [nftMetadata, entryFee]);
+
+  const auctionItemInfo = {
     title: nftMetadata?.name || "Charter Auction Item",
-    image: nftMetadata?.image || "/yacht.png",
-    details: [
-      {
-        label: "Entry Fee:",
-        value: entryFee
-          ? `$${Number(formatEther(entryFee)).toFixed(2)}`
-          : "$0.00",
-      },
-      ...(nftMetadata?.attributes?.map((attr: any) => ({
-        label: `${attr.trait_type}:`,
-        value: attr.value,
-        bold: attr.trait_type === "Reserve Price",
-      })) || []),
-    ],
+    image: nftMetadata?.image || "/auctionError.png",
+    details: auctionDetail,
   };
 
-  // Interaction functions
   const handleBidPosition = (positionIndex: number) => {
     writeContract({
-      address: auctionAddress,
+      address: auctionAddress as `0x${string}`,
       abi: charterAuctionAbi,
       functionName: "bidPosition",
       args: [BigInt(positionIndex)],
     });
+    try {
+      setError(null);
+    } catch (err) {
+      console.error("Error in handleBidPosition:", err);
+      setError("Failed to place bid position.");
+    }
   };
 
   const handleClaimRewards = () => {
-    writeContract({
-      address: auctionAddress,
-      abi: charterAuctionAbi,
-      functionName: "withdrawRewards",
-    });
+    try {
+      writeContract({
+        address: auctionAddress as `0x${string}`,
+        abi: charterAuctionAbi,
+        functionName: "withdrawRewards",
+      });
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Error in handleClaimRewards:", err);
+      setError("Failed to claim rewards.");
+    }
   };
 
   const handleClaimNFT = () => {
-    writeContract({
-      address: auctionAddress,
-      abi: charterAuctionAbi,
-      functionName: "withdrawNFT",
-    });
+    try {
+      writeContract({
+        address: auctionAddress as `0x${string}`,
+        abi: charterAuctionAbi,
+        functionName: "withdrawNFT",
+      });
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Error in handleClaimNFT:", err);
+      setError("Failed to claim NFT.");
+    }
   };
 
   const handleEndRound = () => {
-    writeContract({
-      address: auctionAddress,
-      abi: charterAuctionAbi,
-      functionName: "turnToNextRound",
-    });
+    try {
+      writeContract({
+        address: auctionAddress as `0x${string}`,
+        abi: charterAuctionAbi,
+        functionName: "turnToNextRound",
+      });
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Error in handleEndRound:", err);
+      setError("Failed to end the round.");
+    }
   };
 
   const handleEndAuction = () => {
-    writeContract({
-      address: auctionAddress,
-      abi: charterAuctionAbi,
-      functionName: "endAuction",
-    });
+    try {
+      writeContract({
+        address: auctionAddress as `0x${string}`,
+        abi: charterAuctionAbi,
+        functionName: "endAuction",
+      });
+      setError(null);
+    } catch (err: unknown) {
+      console.error("Error in handleEndAuction:", err);
+      setError("Failed to end the auction.");
+    }
   };
 
-  const InfoRow = ({
-    label,
-    value,
-    bold = false,
-  }: {
-    label: string;
-    value: string;
-    bold?: boolean;
-  }) => (
-    <div className="flex mt-5">
-      <span className="w-1/2 text-sm text-white font-bold">{label}</span>
-      <span
-        className={`w-1/2 text-white ${
-          bold ? "font-bold text-2xl" : "font-normal text-sm"
-        }`}
-      >
-        {value}
-      </span>
-    </div>
-  );
+  if (auctionAddress) {
+    // Use auctionAddress to interact with the auction contract
+    console.log("Auction Address:", auctionAddress);
+  }
 
   if (!auctionAddress) {
     return (
       <div className="min-h-screen bg-[#202020] text-white p-4">
-        Loading auction data...
+        {error || "Loading auction data..."}
       </div>
     );
   }
@@ -271,7 +404,7 @@ export default function AuctionByIdPage() {
 
       <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <Link href={"/auction"}>
+          <Link href="/auction">
             <p className="text-sm text-white font-normal">
               Back to List of Auctions
             </p>
@@ -304,20 +437,22 @@ export default function AuctionByIdPage() {
 
       <div className="flex flex-col md:flex-row justify-between gap-7 mt-8">
         <div className="w-full md:w-[20%]">
-          <h3 className="text-xl text-white font-bold">{yachtInfo.title}</h3>
+          <h3 className="text-xl text-white font-bold">
+            {auctionItemInfo.title}
+          </h3>
           <Image
             width={100}
             height={100}
-            src={yachtInfo.image}
+            src={auctionItemInfo.image}
             className="my-4 w-full"
             alt="Auction Item"
           />
-          {yachtInfo.details.map((detail, index) => (
+          {auctionItemInfo.details.map((detail, index) => (
             <InfoRow
               key={index}
               label={detail.label}
               value={detail.value}
-              bold={detail.bold}
+              bold={"bold" in detail ? detail.bold : false}
             />
           ))}
         </div>
@@ -333,7 +468,7 @@ export default function AuctionByIdPage() {
                 <div className="text-sm text-white font-normal">Price</div>
                 <div className="text-sm text-white font-normal">Action</div>
               </div>
-              {positions?.map((pos: any, index: number) => (
+              {positions?.map((pos: { bidPrice: bigint }, index: number) => (
                 <div key={index} className="flex justify-between pt-2.5">
                   <div className="text-xs text-[#D9D9D9] font-normal">{`00${
                     index + 1
@@ -461,7 +596,11 @@ export default function AuctionByIdPage() {
                 </span>
                 <span className="text-xs text-[#0CB400] font-bold">
                   {rewards
-                    ? `$${Number(formatEther(rewards)).toFixed(2)}`
+                    ? `$${
+                        rewards
+                          ? Number(formatEther(rewards)).toFixed(2)
+                          : "0.00"
+                      }`
                     : "$0.00"}
                 </span>
               </div>
@@ -502,6 +641,8 @@ export default function AuctionByIdPage() {
           </div>
         </div>
       </div>
+
+      {error && <div className="mt-4 text-red-500 text-center">{error}</div>}
     </div>
   );
 }
