@@ -1,4 +1,4 @@
-import * as AuctionCreate from "./createAuction";
-import * as CharterAuction from "./charterAuction";
+import * as AuctionCreateTypes from "./createAuction";
+import * as CharterAuctionTypes from "./charterAuction";
 
-export { AuctionCreate, CharterAuction };
+export { AuctionCreateTypes, CharterAuctionTypes };
