@@ -194,6 +194,8 @@ export default function AuctionByIdPage() {
     args: nftId ? [BigInt(nftId.toString())] : [BigInt(0)],
   });
 
+  console.log("tokenURI", tokenURI);
+
   useEffect(() => {
     if (tokenURIError) {
       console.error("Read Contract Error (tokenURI):", tokenURIError);
