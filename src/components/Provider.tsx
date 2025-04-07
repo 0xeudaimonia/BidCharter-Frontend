@@ -3,14 +3,15 @@
 import "@rainbow-me/rainbowkit/styles.css";
 import { RainbowKitProvider, getDefaultConfig } from "@rainbow-me/rainbowkit";
 import { WagmiProvider } from "wagmi";
-import { base, baseSepolia, sepolia } from "wagmi/chains";
+// import { base, baseSepolia, sepolia } from "wagmi/chains";
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query";
 import { ReactNode } from "react";
+import { baseMainnet, baseSepolia, sepolia } from "@/src/libs/chain";
 
 const config = getDefaultConfig({
   appName: "BidCharter",
   projectId: "Project_id",
-  chains: [base, baseSepolia, sepolia],
+  chains: [baseMainnet, baseSepolia, sepolia],
   ssr: true,
 });
 
