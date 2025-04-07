@@ -1,4 +1,4 @@
-export const abi = [
+export const CharterFactoryABI = [
   {
     inputs: [
       { internalType: "address", name: "_usdt", type: "address" },
@@ -154,4 +154,55 @@ export const abi = [
     stateMutability: "view",
     type: "function",
   },
+];
+
+export interface CharterFactory {
+  // View Functions
+  auctionIds(address: `0x${string}`): Promise<bigint>;
+  auctions(id: bigint): Promise<`0x${string}`>;
+  getAuctionAddress(auctionId: bigint): Promise<`0x${string}`>;
+  getAuctionId(auctionAddress: `0x${string}`): Promise<bigint>;
+  getTotalAuctions(): Promise<bigint>;
+  isAuctionCreatedByFactory(auctionAddress: `0x${string}`): Promise<boolean>;
+  nextAuctionId(): Promise<bigint>;
+  nft(): Promise<`0x${string}`>;
+  usdt(): Promise<`0x${string}`>;
+  onERC721Received(
+    operator: `0x${string}`,
+    from: `0x${string}`,
+    tokenId: bigint,
+    data: `0x${string}`
+  ): Promise<`0x${string}`>;
+
+  // State-Changing Functions
+  createAuction(
+    entryFee: bigint,
+    minRaisedFundsAtBlindRound: bigint
+  ): Promise<{ auctionAddress: `0x${string}` }>;
+}
+
+// Error Types
+export type CharterFactoryErrors =
+  | "InvalidBroker"
+  | "InvalidEntryFee"
+  | "InvalidMinPositions"
+  | "InvalidMinRaisedFunds"
+  | "InvalidNFTAddress"
+  | "InvalidTargetStep"
+  | "InvalidUSDTAddress";
+
+// Event Types
+export type AuctionCreatedEvent = {
+  auctionId: bigint;
+  auctionAddress: `0x${string}`;
+  broker: `0x${string}`;
+  entryFee: bigint;
+  minRaisedFundsAtBlindRound: bigint;
+  tokenId: bigint;
+};
+
+// Type for contract creation
+export type CharterFactoryConstructorArgs = [
+  usdt: `0x${string}`,
+  nft: `0x${string}`
 ];
