@@ -1,5 +1,5 @@
 import { Inter } from "next/font/google";
-import Provider from "@/src/components/Provider";
+import Provider from "@/src/components/App";
 import { Toaster } from "@/src/components/ui/sonner";
 import "@/src/app/globals.css";
 
