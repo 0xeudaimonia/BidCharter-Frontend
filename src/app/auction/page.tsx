@@ -12,25 +12,30 @@ import { useEffect, useMemo, useState } from "react";
 import LoadingSkeleton from "@/src/components/LoadingSkeleton";
 import { Abi } from "viem";
 
-import { AuctionCreate } from "@/src/types";
+import { AuctionCreateTypes } from "@/src/types";
 import Link from "next/link";
+import { toast } from "sonner";
 
 export default function AuctionListPage() {
   // State
   // const [inputValues, setInputValues] = useState<AuctionCreate.InputValues>({});
-  const [auctionData, setAuctionData] = useState<AuctionCreate.Auction[]>([]);
+  const [auctionData, setAuctionData] = useState<AuctionCreateTypes.Auction[]>([]);
 
-  const { data: totalAuctions, isLoading: isTotalAuctionsLoading } =
-    useReadContract({
-      address: charterFactoryContractAddress as `0x${string}`,
-      abi: CharterFactoryABI as Abi,
-      functionName: "getTotalAuctions",
-    }) as { data: bigint | undefined; isLoading: boolean };
+  const { 
+    data: totalAuctions, 
+    error: totalAuctionsError, 
+    refetch: refetchTotalAuctions, 
+    isLoading: isTotalAuctionsLoading 
+  } = useReadContract({
+    address: charterFactoryContractAddress,
+    abi: CharterFactoryABI as Abi,
+    functionName: "getTotalAuctions",
+  }) as AuctionCreateTypes.ReadContractTypes;
 
   const auctionContracts = useMemo(() => {
     if (!totalAuctions) return [];
     return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
-      address: charterFactoryContractAddress as `0x${string}`,
+      address: charterFactoryContractAddress,
       abi: CharterFactoryABI as Abi,
       functionName: "getAuctionAddress",
       args: [auctionId] as const,
@@ -39,18 +44,30 @@ export default function AuctionListPage() {
 
   const {
     data: auctionAddresses,
+    error: auctionAddressesError,
     isLoading: isAuctionAddressesLoading,
-    refetch,
+    refetch: refetchAuctionAddresses,
   } = useReadContracts({
     contracts: auctionContracts,
-  }) as {
-    data: { result: `0x${string}` }[] | undefined;
-    isLoading: boolean;
-    refetch: () => void;
+  }) as { 
+    data: { result: `0x${string}` }[],
+    error: Error | null,
+    isLoading: boolean,
+    refetch: () => void 
   };
 
+  useEffect(() => {
+    if (totalAuctionsError) {
+      toast.error(totalAuctionsError.message.split(".")[0]);
+    }
+
+    if (auctionAddressesError) {
+      toast.error(auctionAddressesError.message.split(".")[0]);
+    }
+  }, [totalAuctionsError, auctionAddressesError]);
+
   // Constants
-  const auctionInfo: AuctionCreate.AuctionInfo = {
+  const auctionInfo: AuctionCreateTypes.AuctionInfo = {
     title: "BidCharter Testnet",
     round: 8,
     myPosition: "$12,521.00",
@@ -64,12 +81,12 @@ export default function AuctionListPage() {
   useEffect(() => {
     if (!auctionAddresses) return;
 
-    const auctions: AuctionCreate.Auction[] = auctionAddresses.map(
-      (address, index) => ({
+    const auctions: AuctionCreateTypes.Auction[] = auctionAddresses.map(
+      (address: { result: `0x${string}` }, index: number) => ({
         auctionId: index,
         auctionAddress: address.result,
         time: new Date().toUTCString(),
-      } as AuctionCreate.Auction)
+      })
     );
     // Sort auctions to show latest first
     setAuctionData(auctions.reverse());
@@ -80,9 +97,8 @@ export default function AuctionListPage() {
     abi: CharterFactoryABI as Abi,
     eventName: "AuctionCreated",
     onLogs: (logs) => {
-      console.log("New auction created:", logs);
       const log = logs[0] as unknown as {
-        args: AuctionCreate.Auction;
+        args: AuctionCreateTypes.Auction;
       };
       setAuctionData((prev) => [
         ...prev,
@@ -90,20 +106,22 @@ export default function AuctionListPage() {
           auctionId: log.args.auctionId,
           auctionAddress: log.args.auctionAddress,
           time: new Date().toUTCString(),
-        } as AuctionCreate.Auction,
+        } as AuctionCreateTypes.Auction,
       ]);
-      refetch();
+      refetchTotalAuctions();
+      refetchAuctionAddresses();
     },
     onError: (error) => {
       console.error("Error watching AuctionCreated event:", error);
+      toast.error(error.message.split(".")[0]);
     },
   });
 
   // Debugging
-  useEffect(() => {
-    console.log("Total Auctions:", totalAuctions);
-    console.log("Auction Data:", auctionData);
-  }, [totalAuctions, auctionData]);
+  // useEffect(() => {
+  //   console.log("Total Auctions:", totalAuctions);
+  //   console.log("Auction Data:", auctionData);
+  // }, [totalAuctions, auctionData]);
 
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
@@ -137,7 +155,7 @@ export default function AuctionListPage() {
                   No auctions yet
                 </p>
               ) : (
-                auctionData.map((data: AuctionCreate.Auction) => (
+                auctionData.map((data: AuctionCreateTypes.Auction) => (
                   <Link
                     href={`/auction/${data.auctionId}`}
                     key={data.auctionId}

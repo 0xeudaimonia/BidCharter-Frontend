@@ -19,4 +19,11 @@ export type AuctionInfo = {
 export type InputDetail = {
   inputLabel: string;
   priceTag: string;
-}; 
+};
+
+export type ReadContractTypes = {
+  data: bigint | undefined;
+  error: Error | undefined;
+  refetch: () => void;
+  isLoading: boolean;
+};

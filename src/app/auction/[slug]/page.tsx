@@ -27,9 +27,9 @@ import { charterFactoryContractAddress } from "@/src/libs/constants";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { CharterNFTABI } from "@/src/libs/abi/CharterNFT";
-import { InfoRowProps } from "@/src/types/charterAuction";
+import { CharterAuctionTypes } from "@/src/types";
 
-const InfoRow = ({ label, value, bold = false }: InfoRowProps) => (
+const InfoRow = ({ label, value, bold = false }: CharterAuctionTypes.InfoRowProps) => (
   <div className="flex mt-5">
     <span className="w-1/2 text-sm text-white font-bold">{label}</span>
     <span
@@ -50,7 +50,7 @@ export default function AuctionByIdPage() {
   const { address } = useAccount();
   const [error, setError] = useState<string | null>(null);
 
-  const { writeContract, data: txHash } = useWriteContract();
+  const { data: txHash, isPending, writeContract } = useWriteContract();
 
   const { isLoading: isTxLoading, isSuccess: isTxSuccess } =
     useWaitForTransactionReceipt({ hash: txHash });
@@ -60,7 +60,7 @@ export default function AuctionByIdPage() {
       console.log("Transaction was successful!");
       setError(null); // Clear any previous errors
     }
-  }, [isTxSuccess]);
+  }, [isTxSuccess, isPending]);
 
   const { data: auctionAddress, error: auctionAddressError } = useReadContract({
     address: charterFactoryContractAddress as `0x${string}`,
@@ -89,6 +89,7 @@ export default function AuctionByIdPage() {
   useEffect(() => {
     if (nftAddressError) {
       setError("Failed to fetch NFT address.");
+      console.error("Read Contract Error (nftAddress):", nftAddressError);
     } else if (nftAddress) {
       console.log("NFT Address fetched successfully:", nftAddress);
       setError(null); // Clear any previous errors
@@ -101,12 +102,29 @@ export default function AuctionByIdPage() {
     functionName: "currentRound",
   });
 
+  console.log("currentRound", currentRound); 
+
   useEffect(() => {
     if (currentRoundError) {
       console.error("Read Contract Error (currentRound):", currentRoundError);
       setError("Failed to fetch current round.");
     }
   }, [currentRoundError]);
+
+  const { data: isBlindRoundEnded, error: isBlindRoundEndedError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "isBlindRoundEnded",
+  });
+
+  console.log("isBlindRoundEnded", isBlindRoundEnded);
+
+  useEffect(() => {
+    if (isBlindRoundEndedError) {
+      console.error("Read Contract Error (isBlindRoundEnded):", isBlindRoundEndedError);
+      setError("Failed to fetch isBlindRoundEnded.");
+    }
+  }, [isBlindRoundEndedError]);
 
   const { data: entryFee, error: entryFeeError } = useReadContract({
     address: auctionAddress as `0x${string}`,
@@ -209,11 +227,9 @@ export default function AuctionByIdPage() {
   const [barData, setBarData] = useState<
     { round: string; price: number; fillValue: number }[]
   >([]);
-  const [nftMetadata, setNftMetadata] = useState<{
-    name?: string;
-    image?: string;
-    attributes?: { trait_type: string; value: string }[];
-  } | null>(null);
+
+
+  const [nftMetadata, setNftMetadata] = useState<CharterAuctionTypes.NFTMetadata | null>(null);
 
   useEffect(() => {
     if (positions && currentRound !== undefined) {
@@ -263,7 +279,7 @@ export default function AuctionByIdPage() {
   // Auction info derived from contract data
   const auctionInfo = {
     title: `BidCharter Auction #${auctionId}`,
-    round: currentRound ? Number(currentRound) : 0,
+    round: isBlindRoundEnded ? (currentRound ? Number(currentRound) : 0) : "Blind Round",
     myPosition:
       positions && address
         ? `$${Number(
