@@ -7,23 +7,18 @@ import {
   useReadContract,
   useReadContracts,
   useWatchContractEvent,
-  useWriteContract,
 } from "wagmi";
 import { useEffect, useMemo, useState } from "react";
 import LoadingSkeleton from "@/src/components/LoadingSkeleton";
-import { toast } from "sonner";
 import { Abi } from "viem";
 
 import { AuctionCreate } from "@/src/types";
 import Link from "next/link";
 
-export default function AuctionCreatePage() {
+export default function AuctionListPage() {
   // State
-  const [inputValues, setInputValues] = useState<AuctionCreate.InputValues>({});
+  // const [inputValues, setInputValues] = useState<AuctionCreate.InputValues>({});
   const [auctionData, setAuctionData] = useState<AuctionCreate.Auction[]>([]);
-
-  // Wagmi hooks
-  const { writeContract, isPending, error: writeError } = useWriteContract();
 
   const { data: totalAuctions, isLoading: isTotalAuctionsLoading } =
     useReadContract({
@@ -113,12 +108,6 @@ export default function AuctionCreatePage() {
     console.log("Total Auctions:", totalAuctions);
     console.log("Auction Data:", auctionData);
   }, [totalAuctions, auctionData]);
-
-  useEffect(() => {
-    if (writeError) {
-      toast.error(writeError.message.split(".")[0]);
-    }
-  }, [writeError]);
 
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
