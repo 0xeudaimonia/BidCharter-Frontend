@@ -21,18 +21,13 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { formatEther } from "viem";
+import { Abi, formatEther } from "viem";
 import { useParams } from "next/navigation";
 import { charterFactoryContractAddress } from "@/src/libs/constants";
-import { charterAuctionAbi } from "@/src/libs/CharterAuction";
-import { charterFactoryAbi } from "@/src/libs/CharterFactory";
-import { abi as erc721ABI } from "@/src/libs/abi";
-
-type InfoRowProps = {
-  label: string;
-  value: string;
-  bold?: boolean;
-};
+import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
+import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
+import { CharterNFTABI } from "@/src/libs/abi/CharterNFT";
+import { InfoRowProps } from "@/src/types/charterAuction";
 
 const InfoRow = ({ label, value, bold = false }: InfoRowProps) => (
   <div className="flex mt-5">
@@ -69,7 +64,7 @@ export default function AuctionByIdPage() {
 
   const { data: auctionAddress, error: auctionAddressError } = useReadContract({
     address: charterFactoryContractAddress as `0x${string}`,
-    abi: charterFactoryAbi,
+    abi: CharterFactoryABI,
     functionName: "getAuctionAddress",
     args: [BigInt(auctionId)],
     // Error handling moved to useEffect
@@ -86,7 +81,7 @@ export default function AuctionByIdPage() {
 
   const { data: nftAddress, error: nftAddressError } = useReadContract({
     address: auctionAddress as `0x${string}`,
-    abi: charterAuctionAbi,
+    abi: CharterAuctionABI as Abi,
     functionName: "nft",
     // Error handling moved to useEffect
   });
@@ -102,7 +97,7 @@ export default function AuctionByIdPage() {
 
   const { data: currentRound, error: currentRoundError } = useReadContract({
     address: auctionAddress as `0x${string}`,
-    abi: charterAuctionAbi,
+    abi: CharterAuctionABI as Abi,
     functionName: "currentRound",
   });
 
@@ -115,7 +110,7 @@ export default function AuctionByIdPage() {
 
   const { data: entryFee, error: entryFeeError } = useReadContract({
     address: auctionAddress as `0x${string}`,
-    abi: charterAuctionAbi,
+    abi: CharterAuctionABI as Abi,
     functionName: "entryFee",
   });
 
@@ -131,7 +126,7 @@ export default function AuctionByIdPage() {
     error: rewardsError,
   }: { data: bigint | undefined; error: Error | null } = useReadContract({
     address: auctionAddress as `0x${string}`,
-    abi: charterAuctionAbi,
+    abi: CharterAuctionABI as Abi,
     functionName: "rewards",
     args: [address || "0x0"],
   });
@@ -146,16 +141,16 @@ export default function AuctionByIdPage() {
   const { data: positions }: { data: { bidPrice: bigint }[] | undefined } =
     useReadContract({
       address: auctionAddress as `0x${string}`,
-      abi: charterAuctionAbi,
+      abi: CharterAuctionABI as Abi,
       functionName: "getRoundPositions",
     });
 
   const { data: targetPrice, error: targetPriceError } = useReadContract({
     address: auctionAddress as `0x${string}`,
-    abi: charterAuctionAbi,
+    abi: CharterAuctionABI as Abi,
     functionName: "getTargetPrice",
     args: [
-      currentRound !== undefined ? BigInt(currentRound as number) : BigInt(0),
+      currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
     ],
   });
 
@@ -168,7 +163,7 @@ export default function AuctionByIdPage() {
 
   const { data: winner, error: winnerError } = useReadContract({
     address: auctionAddress as `0x${string}`,
-    abi: charterAuctionAbi,
+    abi: CharterAuctionABI as Abi,
     functionName: "winner",
   });
 
@@ -181,7 +176,7 @@ export default function AuctionByIdPage() {
 
   const { data: nftId, error: nftIdError } = useReadContract({
     address: auctionAddress as `0x${string}`,
-    abi: charterAuctionAbi,
+    abi: CharterAuctionABI as Abi,
     functionName: "nftId",
   });
 
@@ -194,9 +189,9 @@ export default function AuctionByIdPage() {
 
   const { data: tokenURI, error: tokenURIError } = useReadContract({
     address: nftAddress as `0x${string}`,
-    abi: erc721ABI,
+    abi: CharterNFTABI,
     functionName: "tokenURI",
-    args: [nftId || BigInt(0)],
+    args: nftId ? [BigInt(nftId.toString())] : [BigInt(0)],
   });
 
   useEffect(() => {
@@ -312,7 +307,7 @@ export default function AuctionByIdPage() {
   const handleBidPosition = (positionIndex: number) => {
     writeContract({
       address: auctionAddress as `0x${string}`,
-      abi: charterAuctionAbi,
+      abi: CharterAuctionABI as Abi,
       functionName: "bidPosition",
       args: [BigInt(positionIndex)],
     });
@@ -328,7 +323,7 @@ export default function AuctionByIdPage() {
     try {
       writeContract({
         address: auctionAddress as `0x${string}`,
-        abi: charterAuctionAbi,
+        abi: CharterAuctionABI as Abi,
         functionName: "withdrawRewards",
       });
       setError(null);
@@ -342,7 +337,7 @@ export default function AuctionByIdPage() {
     try {
       writeContract({
         address: auctionAddress as `0x${string}`,
-        abi: charterAuctionAbi,
+        abi: CharterAuctionABI as Abi,
         functionName: "withdrawNFT",
       });
       setError(null);
@@ -356,7 +351,7 @@ export default function AuctionByIdPage() {
     try {
       writeContract({
         address: auctionAddress as `0x${string}`,
-        abi: charterAuctionAbi,
+        abi: CharterAuctionABI as Abi,
         functionName: "turnToNextRound",
       });
       setError(null);
@@ -370,7 +365,7 @@ export default function AuctionByIdPage() {
     try {
       writeContract({
         address: auctionAddress as `0x${string}`,
-        abi: charterAuctionAbi,
+        abi: CharterAuctionABI as Abi,
         functionName: "endAuction",
       });
       setError(null);

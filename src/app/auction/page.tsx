@@ -2,7 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { charterFactoryContractAddress } from "@/src/libs/constants";
-import { charterFactoryAbi } from "@/src/libs/CharterFactory";
+import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import {
   useReadContract,
   useReadContracts,
@@ -22,16 +22,16 @@ export default function AuctionListPage() {
 
   const { data: totalAuctions, isLoading: isTotalAuctionsLoading } =
     useReadContract({
-      address: charterFactoryContractAddress,
-      abi: charterFactoryAbi,
+      address: charterFactoryContractAddress as `0x${string}`,
+      abi: CharterFactoryABI as Abi,
       functionName: "getTotalAuctions",
     }) as { data: bigint | undefined; isLoading: boolean };
 
   const auctionContracts = useMemo(() => {
     if (!totalAuctions) return [];
     return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
-      address: charterFactoryContractAddress,
-      abi: charterFactoryAbi as Abi,
+      address: charterFactoryContractAddress as `0x${string}`,
+      abi: CharterFactoryABI as Abi,
       functionName: "getAuctionAddress",
       args: [auctionId] as const,
     }));
@@ -69,24 +69,20 @@ export default function AuctionListPage() {
         auctionId: index,
         auctionAddress: address.result,
         time: new Date().toUTCString(),
-      })
+      } as AuctionCreate.Auction)
     );
     // Sort auctions to show latest first
     setAuctionData(auctions.reverse());
   }, [auctionAddresses]);
 
   useWatchContractEvent({
-    address: charterFactoryContractAddress,
-    abi: charterFactoryAbi,
+    address: charterFactoryContractAddress as `0x${string}`,
+    abi: CharterFactoryABI as Abi,
     eventName: "AuctionCreated",
     onLogs: (logs) => {
       console.log("New auction created:", logs);
       const log = logs[0] as unknown as {
-        args: {
-          auctionId: number;
-          auctionAddress: `0x${string}`;
-          time: string;
-        };
+        args: AuctionCreate.Auction;
       };
       setAuctionData((prev) => [
         ...prev,
@@ -94,7 +90,7 @@ export default function AuctionListPage() {
           auctionId: log.args.auctionId,
           auctionAddress: log.args.auctionAddress,
           time: new Date().toUTCString(),
-        },
+        } as AuctionCreate.Auction,
       ]);
       refetch();
     },
@@ -141,7 +137,7 @@ export default function AuctionListPage() {
                   No auctions yet
                 </p>
               ) : (
-                auctionData.map((data) => (
+                auctionData.map((data: AuctionCreate.Auction) => (
                   <Link
                     href={`/auction/${data.auctionId}`}
                     key={data.auctionId}

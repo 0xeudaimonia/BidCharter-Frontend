@@ -2,7 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { charterFactoryContractAddress } from "@/src/libs/constants";
-import { charterFactoryAbi } from "@/src/libs/CharterFactory";
+import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import {
   useReadContract,
   useReadContracts,
@@ -27,7 +27,7 @@ export default function AuctionCreatePage() {
   const { data: totalAuctions, isLoading: isTotalAuctionsLoading } =
     useReadContract({
       address: charterFactoryContractAddress,
-      abi: charterFactoryAbi,
+      abi: CharterFactoryABI,
       functionName: "getTotalAuctions",
     }) as { data: bigint | undefined; isLoading: boolean };
 
@@ -35,7 +35,7 @@ export default function AuctionCreatePage() {
     if (!totalAuctions) return [];
     return [...Array(Number(totalAuctions)).keys()].map((auctionId) => ({
       address: charterFactoryContractAddress,
-      abi: charterFactoryAbi as Abi,
+      abi: CharterFactoryABI as Abi,
       functionName: "getAuctionAddress",
       args: [auctionId] as const,
     }));
@@ -102,9 +102,9 @@ export default function AuctionCreatePage() {
     }
 
     try {
-      await writeContract({
-        abi: charterFactoryAbi,
-        address: charterFactoryContractAddress,
+      writeContract({
+        abi: CharterFactoryABI as Abi,
+        address: charterFactoryContractAddress as `0x${string}`,
         functionName: "createAuction",
         args: [BigInt(seatPrice), BigInt(reserves)],
       });
@@ -120,11 +120,12 @@ export default function AuctionCreatePage() {
     if (!auctionAddresses) return;
 
     const auctions: AuctionCreate.Auction[] = auctionAddresses.map(
-      (address, index) => ({
-        auctionId: index,
-        auctionAddress: address.result,
-        time: new Date().toUTCString(),
-      })
+      (address, index) =>
+        ({
+          auctionId: index,
+          auctionAddress: address.result,
+          time: new Date().toUTCString(),
+        } as AuctionCreate.Auction)
     );
     // Sort auctions to show latest first
     setAuctionData(auctions.reverse());
@@ -132,16 +133,11 @@ export default function AuctionCreatePage() {
 
   useWatchContractEvent({
     address: charterFactoryContractAddress,
-    abi: charterFactoryAbi,
+    abi: CharterFactoryABI,
     eventName: "AuctionCreated",
     onLogs: (logs) => {
-      console.log("New auction created:", logs);
       const log = logs[0] as unknown as {
-        args: {
-          auctionId: number;
-          auctionAddress: `0x${string}`;
-          time: string;
-        };
+        args: AuctionCreate.Auction;
       };
       setAuctionData((prev) => [
         ...prev,
@@ -149,7 +145,7 @@ export default function AuctionCreatePage() {
           auctionId: log.args.auctionId,
           auctionAddress: log.args.auctionAddress,
           time: new Date().toUTCString(),
-        },
+        } as AuctionCreate.Auction,
       ]);
       refetch();
     },
@@ -182,7 +178,7 @@ export default function AuctionCreatePage() {
         <div className="flex flex-col gap-4">
           <h1 className="font-bold text-xl text-white">Create Auction</h1>
           <div className="border border-[#D9D9D940] rounded-xl p-4 flex flex-col gap-4 w-full">
-            {inputDetails.map((input) => (
+            {inputDetails.map((input: AuctionCreate.InputDetail) => (
               <div
                 key={input.inputLabel}
                 className="flex flex-col items-center justify-center w-full"
@@ -232,7 +228,7 @@ export default function AuctionCreatePage() {
                   No auctions yet
                 </p>
               ) : (
-                auctionData.map((data) => (
+                auctionData.map((data: AuctionCreate.Auction) => (
                   <div
                     key={data.auctionId}
                     className="flex justify-between pt-2.5 gap-1"
