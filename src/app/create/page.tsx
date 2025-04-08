@@ -14,7 +14,7 @@ import LoadingSkeleton from "@/src/components/LoadingSkeleton";
 import { toast } from "sonner";
 import { Abi } from "viem";
 
-import { AuctionCreateTypes } from "@/src/types";
+import { AuctionCreateTypes, GeneralTypes } from "@/src/types";
 
 export default function AuctionCreatePage() {
   // State
@@ -33,7 +33,7 @@ export default function AuctionCreatePage() {
     address: charterFactoryContractAddress,
     abi: CharterFactoryABI,
     functionName: "getTotalAuctions",
-  }) as AuctionCreateTypes.ReadContractTypes;
+  }) as GeneralTypes.ReadContractTypes;
 
   const auctionContracts = useMemo(() => {
     if (!totalAuctions) return [];
@@ -52,7 +52,7 @@ export default function AuctionCreatePage() {
     refetch: refetchAuctionAddresses,
   } = useReadContracts({
     contracts: auctionContracts,
-  }) as AuctionCreateTypes.ReadContractTypes;
+  }) as AuctionCreateTypes.FetchAuctionAddresses;
 
   useEffect(() => {
     if (totalAuctionsError) {
@@ -154,20 +154,9 @@ export default function AuctionCreatePage() {
     address: charterFactoryContractAddress,
     abi: CharterFactoryABI,
     eventName: "AuctionCreated",
-    onLogs: (logs) => {
-      const log = logs[0] as unknown as {
-        args: AuctionCreateTypes.Auction;
-      };
-      // setAuctionData((prev) => [
-      //   ...prev,
-      //   {
-      //     auctionId: log.args.auctionId,
-      //     auctionAddress: log.args.auctionAddress,
-      //     time: new Date().toUTCString(),
-      //   } as AuctionCreateTypes.Auction,
-      // ]);
-      refetchTotalAuctions();
-      refetchAuctionAddresses();
+    onLogs: () => {
+      refetchTotalAuctions?.();
+      refetchAuctionAddresses?.();
     },
     onError: (error) => {
       console.error("Error watching AuctionCreated event:", error);

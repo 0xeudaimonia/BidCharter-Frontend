@@ -6,6 +6,13 @@ export type Auction = {
   time: string;
 };
 
+export type FetchAuctionAddresses = {
+  data: { result: `0x${string}` }[];
+  refetch: () => void;
+  isLoading: boolean;
+  error: Error | null;
+};
+
 export type AuctionInfo = {
   title: string;
   round: number;
@@ -21,9 +28,3 @@ export type InputDetail = {
   priceTag: string;
 };
 
-export type ReadContractTypes = {
-  data: bigint | undefined;
-  error: Error | undefined;
-  refetch: () => void;
-  isLoading: boolean;
-};
