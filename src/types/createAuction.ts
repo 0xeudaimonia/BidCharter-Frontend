@@ -6,6 +6,13 @@ export type Auction = {
   time: string;
 };
 
+export type FetchAuctionAddresses = {
+  data: { result: `0x${string}` }[];
+  refetch: () => void;
+  isLoading: boolean;
+  error: Error | null;
+};
+
 export type AuctionInfo = {
   title: string;
   round: number;
@@ -19,4 +26,5 @@ export type AuctionInfo = {
 export type InputDetail = {
   inputLabel: string;
   priceTag: string;
-}; 
+};
+
