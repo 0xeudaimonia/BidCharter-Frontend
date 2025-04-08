@@ -15,4 +15,22 @@ type NFTMetadata = {
   attributes?: NFTMetadataAttributes[];
 };
 
-export type { InfoRowProps, NFTMetadataAttributes, NFTMetadata };
+type ChartData = {
+  round: string;
+  price: number;
+  leftBid: number;
+  rightBid: number;
+};
+
+type BarData = {
+  round: string;
+  price: number;
+  fillValue: number;
+};
+
+type Position = {
+  rewarders: `0x${string}`[];
+  bidPrice: bigint;
+};
+
+export type { InfoRowProps, NFTMetadataAttributes, NFTMetadata, ChartData, BarData, Position };

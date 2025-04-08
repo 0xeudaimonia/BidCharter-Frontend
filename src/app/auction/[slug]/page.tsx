@@ -20,6 +20,7 @@ import {
   useReadContract,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useWatchContractEvent,
 } from "wagmi";
 import { Abi, formatEther } from "viem";
 import { useParams } from "next/navigation";
@@ -27,7 +28,8 @@ import { charterFactoryContractAddress } from "@/src/libs/constants";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { CharterNFTABI } from "@/src/libs/abi/CharterNFT";
-import { CharterAuctionTypes } from "@/src/types";
+import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
+import { toast } from "sonner";
 
 const InfoRow = ({ label, value, bold = false }: CharterAuctionTypes.InfoRowProps) => (
   <div className="flex mt-5">
@@ -48,197 +50,325 @@ export default function AuctionByIdPage() {
   const auctionId = slug as string;
 
   const { address } = useAccount();
-  const [error, setError] = useState<string | null>(null);
 
-  const { data: txHash, isPending, writeContract } = useWriteContract();
+  const {
+    data: writeTxHash,
+    writeContract,
+  } = useWriteContract();
 
-  const { isLoading: isTxLoading, isSuccess: isTxSuccess } =
-    useWaitForTransactionReceipt({ hash: txHash });
+  const {
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    isError: isTxError,
+  } = useWaitForTransactionReceipt({ hash: writeTxHash });
 
   useEffect(() => {
-    if (isTxSuccess) {
-      console.log("Transaction was successful!");
-      setError(null); // Clear any previous errors
+    if (isTxLoading) {
+      toast.loading("Transaction is pending...", { id: "transactionPending" });
     }
-  }, [isTxSuccess, isPending]);
 
-  const { data: auctionAddress, error: auctionAddressError } = useReadContract({
+    if (isTxSuccess) {
+      toast.success("Transaction was successful!", { id: "transactionPending" });
+    }
+
+    if (isTxError) {
+      toast.error("Transaction failed!", { id: "transactionPending" });
+    }
+  }, [isTxSuccess, isTxLoading, isTxError]);
+
+  const {
+    data: auctionAddress,
+    error: auctionAddressError,
+    // isLoading: isAuctionAddressLoading,
+    // refetch: refetchAuctionAddress,
+  } = useReadContract({
     address: charterFactoryContractAddress as `0x${string}`,
     abi: CharterFactoryABI,
     functionName: "getAuctionAddress",
     args: [BigInt(auctionId)],
-    // Error handling moved to useEffect
-  });
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
-    if (auctionAddressError) {
-      setError("Failed to fetch auction address.");
-    } else if (auctionAddress) {
-      console.log("Auction Address fetched successfully:", auctionAddress);
-      setError(null); // Clear any previous errors
-    }
-  }, [auctionAddress, auctionAddressError]);
+    // if (isAuctionAddressLoading) {
+    //   toast.loading("Fetching auction address...", { id: "auctionAddressLoading" });
+    // }
 
-  const { data: nftAddress, error: nftAddressError } = useReadContract({
+    if (auctionAddressError) {
+      toast.error("Failed to fetch auction address.", { id: "auctionAddressLoading" });
+    }
+
+    // if (auctionAddress) {
+    //   toast.success("Auction address fetched successfully!", { id: "auctionAddressLoading" });
+    // }
+  }, [auctionAddressError]);
+
+  const {
+    data: nftAddress,
+    error: nftAddressError,
+    // isLoading: isNftAddressLoading,
+    refetch: refetchNftAddress,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "nft",
     // Error handling moved to useEffect
-  });
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
-    if (nftAddressError) {
-      setError("Failed to fetch NFT address.");
-      console.error("Read Contract Error (nftAddress):", nftAddressError);
-    } else if (nftAddress) {
-      console.log("NFT Address fetched successfully:", nftAddress);
-      setError(null); // Clear any previous errors
-    }
-  }, [nftAddress, nftAddressError]);
+    // if (isNftAddressLoading) {
+    //   toast.loading("Fetching NFT address...", { id: "nftAddressLoading" });
+    // }
 
-  const { data: currentRound, error: currentRoundError } = useReadContract({
+    if (nftAddressError) {
+      toast.error("Failed to fetch NFT address.", { id: "nftAddressLoading" });
+    }
+
+    // if (nftAddress) {
+    //   toast.success("NFT address fetched successfully!", { id: "nftAddressLoading" });
+    // }
+  }, [nftAddressError]);
+
+  const {
+    data: currentRound,
+    error: currentRoundError,
+    // isLoading: isCurrentRoundLoading,
+    refetch: refetchCurrentRound,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "currentRound",
-  });
-
-  console.log("currentRound", currentRound); 
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
-    if (currentRoundError) {
-      console.error("Read Contract Error (currentRound):", currentRoundError);
-      setError("Failed to fetch current round.");
-    }
-  }, [currentRoundError]);
+    // if (isCurrentRoundLoading) {
+    //   toast.loading("Fetching current round...", { id: "currentRoundLoading" });
+    // }
 
-  const { data: isBlindRoundEnded, error: isBlindRoundEndedError } = useReadContract({
+    if (currentRoundError) {
+      toast.error("Failed to fetch current round.", { id: "currentRoundLoading" });
+    }
+
+    // if (currentRound) {
+    //   toast.success("Current round fetched successfully!", { id: "currentRoundLoading" });
+    // }
+  }, [currentRoundError]);
+  const {
+    data: isBlindRoundEnded,
+    error: isBlindRoundEndedError,
+    // isLoading: isBlindRoundEndedLoading,
+    // refetch: refetchIsBlindRoundEnded,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "isBlindRoundEnded",
-  });
-
-  console.log("isBlindRoundEnded", isBlindRoundEnded);
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
+    // if (isBlindRoundEndedLoading) {
+    //   toast.loading("Fetching isBlindRoundEnded...", { id: "isBlindRoundEndedLoading" });
+    // }
+
     if (isBlindRoundEndedError) {
-      console.error("Read Contract Error (isBlindRoundEnded):", isBlindRoundEndedError);
-      setError("Failed to fetch isBlindRoundEnded.");
+      toast.error("Failed to fetch isBlindRoundEnded.", { id: "isBlindRoundEndedLoading" });
     }
+
+    // if (isBlindRoundEnded) {
+    //   toast.success("isBlindRoundEnded fetched successfully!", { id: "isBlindRoundEndedLoading" });
+    // }
   }, [isBlindRoundEndedError]);
 
-  const { data: entryFee, error: entryFeeError } = useReadContract({
+  const {
+    data: entryFee,
+    error: entryFeeError,
+    // isLoading: isEntryFeeLoading,
+    // refetch: refetchEntryFee,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "entryFee",
-  });
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
     if (entryFeeError) {
-      console.error("Read Contract Error (entryFee):", entryFeeError);
-      setError("Failed to fetch entry fee.");
+      toast.error("Failed to fetch entry fee.", { id: "entryFeeLoading" });
     }
-  }, [entryFeeError]);
+
+    // if (entryFee) {
+    //   toast.success("Entry fee fetched successfully!", { id: "entryFeeLoading" });
+    // }
+
+    // if (isEntryFeeLoading) {
+    //   toast.loading("Fetching entry fee...", { id: "entryFeeLoading" });
+    // }
+  }, [entryFee, entryFeeError]);
 
   const {
     data: rewards,
     error: rewardsError,
-  }: { data: bigint | undefined; error: Error | null } = useReadContract({
+    // isLoading: isRewardsLoading,
+    refetch: refetchRewards,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "rewards",
     args: [address || "0x0"],
-  });
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
+    // if (isRewardsLoading) {
+    //   toast.loading("Fetching rewards...", { id: "rewardsLoading" });
+    // }
+
     if (rewardsError) {
-      console.error("Read Contract Error (rewards):", rewardsError);
-      setError("Failed to fetch rewards.");
+      toast.error("Failed to fetch rewards.", { id: "rewardsLoading" });
     }
+
+    // if (rewards) {
+    //   toast.success("Rewards fetched successfully!", { id: "rewardsLoading" });
+    // }
   }, [rewardsError]);
 
-  const { data: positions }: { data: { bidPrice: bigint }[] | undefined } =
-    useReadContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "getRoundPositions",
-    });
+  // const {
+  //   data: positions,
+  //   error: positionsError,
+  //   // isLoading: isPositionsLoading,
+  //   refetch: refetchPositions,
+  // } = useReadContract({
+  //   address: auctionAddress as `0x${string}`,
+  //   abi: CharterAuctionABI as Abi,
+  //   functionName: "getRoundPositions",
+  //   args: [currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0)],
+  // }) as GeneralTypes.ReadContractTypes;
+  
+  const {
+    data: positions,
+    error: positionsError,
+    // isLoading: isPositionsLoading,
+    refetch: refetchPositions,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "getRoundPositions",
+    args: [currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0)],
+  }) as { data: CharterAuctionTypes.Position[], refetch: () => void, error: Error | null };
+  
+  useEffect(() => {
+    if (positionsError) {
+      toast.error("Failed to fetch positions.", { id: "positionsLoading" });
+    }
+  }, [positionsError]);
 
-  const { data: targetPrice, error: targetPriceError } = useReadContract({
+  const {
+    data: targetPrice,
+    error: targetPriceError,
+    // isLoading: isTargetPriceLoading,
+    // refetch: refetchTargetPrice,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "getTargetPrice",
     args: [
       currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
     ],
-  });
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
     if (targetPriceError) {
-      console.error("Read Contract Error (targetPrice):", targetPriceError);
-      setError("Failed to fetch target price.");
+      toast.error("Failed to fetch target price.", { id: "targetPriceLoading" });
     }
+
+    // if (targetPrice) {
+    //   toast.success("Target price fetched successfully!", { id: "targetPriceLoading" });
+    // }
+
+    // if (isTargetPriceLoading) {
+    //   toast.loading("Fetching target price...", { id: "targetPriceLoading" });
+    // }
   }, [targetPriceError]);
 
-  const { data: winner, error: winnerError } = useReadContract({
+  const {
+    data: winner,
+    error: winnerError,
+    // isLoading: isWinnerLoading,
+    // refetch: refetchWinner,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "winner",
-  });
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
     if (winnerError) {
-      console.error("Read Contract Error (winner):", winnerError);
-      setError("Failed to fetch winner.");
+      toast.error("Failed to fetch winner.", { id: "winnerLoading" });
     }
+
+    // if (winner) {
+    //   toast.success("Winner fetched successfully!", { id: "winnerLoading" });
+    // }
+
+    // if (isWinnerLoading) {
+    //   toast.loading("Fetching winner...", { id: "winnerLoading" });
+    // }
   }, [winnerError]);
 
-  const { data: nftId, error: nftIdError } = useReadContract({
+  const {
+    data: nftId,
+    error: nftIdError,
+    // isLoading: isNftIdLoading,
+    // refetch: refetchNftId,
+  } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "nftId",
-  });
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
     if (nftIdError) {
-      console.error("Read Contract Error (nftId):", nftIdError);
-      setError("Failed to fetch NFT ID.");
+      toast.error("Failed to fetch NFT ID.", { id: "nftIdLoading" });
     }
+
+    // if (nftId) {
+    //   toast.success("NFT ID fetched successfully!", { id: "nftIdLoading" });
+    // }
+
+    // if (isNftIdLoading) {
+    //   toast.loading("Fetching NFT ID...", { id: "nftIdLoading" });
+    // }
   }, [nftIdError]);
 
-  const { data: tokenURI, error: tokenURIError } = useReadContract({
+  const {
+    data: tokenURI,
+    error: tokenURIError,
+    // isLoading: isTokenURILoading,
+    // refetch: refetchTokenURI,
+  } = useReadContract({
     address: nftAddress as `0x${string}`,
     abi: CharterNFTABI,
     functionName: "tokenURI",
     args: nftId ? [BigInt(nftId.toString())] : [BigInt(0)],
-  });
-
-  console.log("tokenURI", tokenURI);
+  }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
     if (tokenURIError) {
-      console.error("Read Contract Error (tokenURI):", tokenURIError);
-      setError("Failed to fetch token URI.");
+      toast.error("Failed to fetch token URI.", { id: "tokenURILoading" });
     }
+
+    // if (isTokenURILoading) {
+    //   toast.loading("Fetching token URI...", { id: "tokenURILoading" });
+    // }
+
+    // if (tokenURI) {
+    //   toast.success("Token URI fetched successfully!", { id: "tokenURILoading" });
+    // }
   }, [tokenURIError]);
 
-  const [chartData, setChartData] = useState<
-    { round: string; price: number; leftBid: number; rightBid: number }[]
-  >([]);
-  const [barData, setBarData] = useState<
-    { round: string; price: number; fillValue: number }[]
-  >([]);
-
-
+  const [chartData, setChartData] = useState<CharterAuctionTypes.ChartData[]>([]);
+  const [barData, setBarData] = useState<CharterAuctionTypes.BarData[]>([]);
   const [nftMetadata, setNftMetadata] = useState<CharterAuctionTypes.NFTMetadata | null>(null);
 
   useEffect(() => {
-    if (positions && currentRound !== undefined) {
-      const formattedData: {
-        round: string;
-        price: number;
-        leftBid: number;
-        rightBid: number;
-      }[] = positions.map((pos: { bidPrice: bigint }, index: number) => ({
+    if (positions && positions.length > 0 && currentRound !== undefined) {
+      const formattedData: CharterAuctionTypes.ChartData[] = positions.map((pos: CharterAuctionTypes.Position, index: number) => ({
         round: `R${(Number(currentRound) + index).toString().padStart(2, "0")}`,
         price: Number(formatEther(pos.bidPrice)),
         leftBid:
@@ -246,11 +376,7 @@ export default function AuctionByIdPage() {
         rightBid:
           index >= positions.length / 2 ? Number(formatEther(pos.bidPrice)) : 0,
       }));
-      const formattedBarData: {
-        round: string;
-        price: number;
-        fillValue: number;
-      }[] = positions.map((pos: { bidPrice: bigint }, index: number) => ({
+      const formattedBarData: CharterAuctionTypes.BarData[] = positions.map((pos: CharterAuctionTypes.Position, index: number) => ({
         round: `R${(Number(currentRound) + index).toString().padStart(2, "0")}`,
         price: Number(formatEther(pos.bidPrice)),
         fillValue: 1,
@@ -268,10 +394,10 @@ export default function AuctionByIdPage() {
           .then((data) => setNftMetadata(data))
           .catch((err) => {
             console.error("Failed to fetch NFT metadata:", err);
-            setError("Failed to fetch NFT metadata.");
+            toast.error("Failed to fetch NFT metadata.");
           });
       } else {
-        throw new Error("Invalid tokenURI");
+        toast.error("Invalid tokenURI.");
       }
     }
   }, [tokenURI]);
@@ -329,82 +455,101 @@ export default function AuctionByIdPage() {
       functionName: "bidPosition",
       args: [BigInt(positionIndex)],
     });
-    try {
-      setError(null);
-    } catch (err) {
-      console.error("Error in handleBidPosition:", err);
-      setError("Failed to place bid position.");
-    }
   };
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "BidPosition",
+    onLogs: (logs) => {
+      console.log("BidPosition event:", logs);
+      refetchCurrentRound?.();
+      refetchPositions?.();
+    },
+  });
 
   const handleClaimRewards = () => {
-    try {
-      writeContract({
-        address: auctionAddress as `0x${string}`,
-        abi: CharterAuctionABI as Abi,
-        functionName: "withdrawRewards",
-      });
-      setError(null);
-    } catch (err: unknown) {
-      console.error("Error in handleClaimRewards:", err);
-      setError("Failed to claim rewards.");
-    }
+    writeContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "withdrawRewards",
+    });
+    toast.success("Rewards claimed successfully.");
   };
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "RewardsWithdrawn",
+    onLogs: (logs) => {
+      console.log("RewardsWithdrawn event:", logs);
+      refetchRewards?.();
+    },
+  });
 
   const handleClaimNFT = () => {
-    try {
-      writeContract({
-        address: auctionAddress as `0x${string}`,
-        abi: CharterAuctionABI as Abi,
-        functionName: "withdrawNFT",
-      });
-      setError(null);
-    } catch (err: unknown) {
-      console.error("Error in handleClaimNFT:", err);
-      setError("Failed to claim NFT.");
-    }
+    writeContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "withdrawNFT",
+    });
   };
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "NFTWithdrawn",
+    onLogs: (logs) => {
+      console.log("NFTWithdrawn event:", logs);
+      refetchNftAddress?.();
+    },
+  });
 
   const handleEndRound = () => {
-    try {
-      writeContract({
-        address: auctionAddress as `0x${string}`,
-        abi: CharterAuctionABI as Abi,
-        functionName: "turnToNextRound",
-      });
-      setError(null);
-    } catch (err: unknown) {
-      console.error("Error in handleEndRound:", err);
-      setError("Failed to end the round.");
-    }
+    writeContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "turnToNextRound",
+    });
   };
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "NewRoundStarted",
+    onLogs: (logs) => {
+      console.log("NewRoundStarted event:", logs);
+      refetchCurrentRound?.();
+      refetchPositions?.();
+    },
+  });
 
   const handleEndAuction = () => {
-    try {
-      writeContract({
-        address: auctionAddress as `0x${string}`,
-        abi: CharterAuctionABI as Abi,
-        functionName: "endAuction",
-      });
-      setError(null);
-    } catch (err: unknown) {
-      console.error("Error in handleEndAuction:", err);
-      setError("Failed to end the auction.");
-    }
+    writeContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "endAuction",
+    });
   };
 
-  if (auctionAddress) {
-    // Use auctionAddress to interact with the auction contract
-    console.log("Auction Address:", auctionAddress);
-  }
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "EndAuction",
+    onLogs: (logs) => {
+      console.log("EndAuction event:", logs);
+      refetchCurrentRound?.();
+      refetchPositions?.();
+    },
+  });
 
-  if (!auctionAddress) {
-    return (
-      <div className="min-h-screen bg-[#202020] text-white p-4">
-        {error || "Loading auction data..."}
-      </div>
-    );
-  }
+  // if (!auctionAddress) {
+  //   return (
+  //     <div className="min-h-screen bg-[#202020] text-white p-4">
+  //       {error || "Loading auction data..."}
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
@@ -611,7 +756,7 @@ export default function AuctionByIdPage() {
                   {rewards
                     ? `$${
                         rewards
-                          ? Number(formatEther(rewards)).toFixed(2)
+                          ? Number(formatEther(rewards as bigint)).toFixed(2)
                           : "0.00"
                       }`
                     : "$0.00"}
@@ -654,8 +799,6 @@ export default function AuctionByIdPage() {
           </div>
         </div>
       </div>
-
-      {error && <div className="mt-4 text-red-500 text-center">{error}</div>}
     </div>
   );
 }
