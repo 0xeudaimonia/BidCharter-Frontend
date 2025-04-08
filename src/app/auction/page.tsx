@@ -49,12 +49,7 @@ export default function AuctionListPage() {
     refetch: refetchAuctionAddresses,
   } = useReadContracts({
     contracts: auctionContracts,
-  }) as { 
-    data: { result: `0x${string}` }[],
-    error: Error | null,
-    isLoading: boolean,
-    refetch: () => void 
-  };
+  }) as AuctionCreateTypes.ReadContractTypes;
 
   useEffect(() => {
     if (totalAuctionsError) {
@@ -97,17 +92,17 @@ export default function AuctionListPage() {
     abi: CharterFactoryABI as Abi,
     eventName: "AuctionCreated",
     onLogs: (logs) => {
-      const log = logs[0] as unknown as {
-        args: AuctionCreateTypes.Auction;
-      };
-      setAuctionData((prev) => [
-        ...prev,
-        {
-          auctionId: log.args.auctionId,
-          auctionAddress: log.args.auctionAddress,
-          time: new Date().toUTCString(),
-        } as AuctionCreateTypes.Auction,
-      ]);
+      // const log = logs[0] as unknown as {
+      //   args: AuctionCreateTypes.Auction;
+      // };
+      // setAuctionData((prev) => [
+      //   ...prev,
+      //   {
+      //     auctionId: log.args.auctionId,
+      //     auctionAddress: log.args.auctionAddress,
+      //     time: new Date().toUTCString(),
+      //   } as AuctionCreateTypes.Auction,
+      // ]);
       refetchTotalAuctions();
       refetchAuctionAddresses();
     },

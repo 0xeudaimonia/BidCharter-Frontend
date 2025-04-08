@@ -28,6 +28,7 @@ import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { CharterNFTABI } from "@/src/libs/abi/CharterNFT";
 import { CharterAuctionTypes } from "@/src/types";
+import { toast } from "sonner";
 
 const InfoRow = ({ label, value, bold = false }: CharterAuctionTypes.InfoRowProps) => (
   <div className="flex mt-5">
@@ -50,24 +51,43 @@ export default function AuctionByIdPage() {
   const { address } = useAccount();
   const [error, setError] = useState<string | null>(null);
 
-  const { data: txHash, isPending, writeContract } = useWriteContract();
+  const {
+    data: writeTxHash,
+    writeContract,
+  } = useWriteContract();
 
-  const { isLoading: isTxLoading, isSuccess: isTxSuccess } =
-    useWaitForTransactionReceipt({ hash: txHash });
+  const {
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    isError: isTxError,
+  } = useWaitForTransactionReceipt({ hash: writeTxHash });
 
   useEffect(() => {
+    if (isTxLoading) {
+      toast.loading("Transaction is pending...", { id: "transactionPending" });
+    }
+
     if (isTxSuccess) {
       console.log("Transaction was successful!");
-      setError(null); // Clear any previous errors
+      toast.success("Transaction was successful!", { id: "transactionPending" });
     }
-  }, [isTxSuccess, isPending]);
 
-  const { data: auctionAddress, error: auctionAddressError } = useReadContract({
+    if (isTxError) {
+      toast.error("Transaction failed!", { id: "transactionPending" });
+    }
+
+  }, [isTxSuccess, isTxLoading, isTxError]);
+
+  const {
+    data: auctionAddress,
+    error: auctionAddressError,
+    isLoading,
+    refetch,
+  } = useReadContract({
     address: charterFactoryContractAddress as `0x${string}`,
     abi: CharterFactoryABI,
     functionName: "getAuctionAddress",
     args: [BigInt(auctionId)],
-    // Error handling moved to useEffect
   });
 
   useEffect(() => {
@@ -101,8 +121,6 @@ export default function AuctionByIdPage() {
     abi: CharterAuctionABI as Abi,
     functionName: "currentRound",
   });
-
-  console.log("currentRound", currentRound); 
 
   useEffect(() => {
     if (currentRoundError) {
