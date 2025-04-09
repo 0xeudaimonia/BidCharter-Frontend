@@ -7,6 +7,8 @@ export const charterFactoryContractAddress: `0x${string}` = isValidAddress(
   ? process.env.NEXT_PUBLIC_CHARTER_FACTORY_CONTRACT_ADDRESS
   : "0xA8c39E72F2e5fb316bb6B39638A99179315e12bE";
 
+export const MAX_UINT256 = BigInt("115792089237316195423570985008687907853269984665640564039457584007913129639935");
+
 export const yachtInfoTemp = {
   title: "KING BENJI Yacht Charter",
   image: "/yacht.png",

@@ -4,3 +4,8 @@ export type ReadContractTypes = {
   refetch?: () => void;
   isLoading?: boolean;
 };
+
+export type Usdt = {
+  address: `0x${string}`;
+  decimals: bigint;
+};

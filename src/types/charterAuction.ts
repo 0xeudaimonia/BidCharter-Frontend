@@ -1,4 +1,4 @@
-type InfoRowProps = {
+export type InfoRowProps = {
   label: string;
   value: string;
   bold?: boolean;
@@ -10,36 +10,36 @@ export type YachtInfo = {
   details: InfoRowProps[];
 };
 
-type NFTMetadataAttributes = {
+export type NFTMetadataAttributes = {
   trait_type: string;
   value: string;
 };
 
-type NFTMetadata = {
+export type NFTMetadata = {
   name?: string;
   image?: string;
   attributes?: NFTMetadataAttributes[];
 };
 
-type ChartData = {
+export type ChartData = {
   round: string;
   price: number;
   leftBid: number;
   rightBid: number;
 };
 
-type BarData = {
+export type BarData = {
   round: string;
   price: number;
   fillValue: number;
 };
 
-type Position = {
+export type Position = {
   seat: string;
   price: string;
 };
 
-type RoundInfo = {
+export type RoundInfo = {
   title: string;
   round: string;
   myPosition: string;
@@ -49,23 +49,20 @@ type RoundInfo = {
   auctionTime: string;  
 };
 
-type RoundInfoItem = {
+export type RoundInfoItem = {
   label: string;
   value: string;
 };
 
-type ChartDataItem = {
+export type ChartDataItem = {
   round: string;
   price: number;
   leftBid: number;
   rightBid: number;
 };
 
-type GraphbarItem = {
+export type GraphbarItem = {
   round: string;
   price: number;
   fillValue: number;
 };
-
-
-export type { InfoRowProps, NFTMetadataAttributes, NFTMetadata, ChartData, BarData, Position, RoundInfo, RoundInfoItem, ChartDataItem, GraphbarItem };

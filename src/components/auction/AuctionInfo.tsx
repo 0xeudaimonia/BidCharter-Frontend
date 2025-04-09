@@ -7,7 +7,6 @@ import { toast } from "sonner";
 import Image from "next/image";
 
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
-import { ERC20ABI } from "@/src/libs/abi/ERC20";
 import { Abi, formatUnits } from "viem";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 
@@ -18,9 +17,11 @@ import { CharterNFTABI } from "@/src/libs/abi/CharterNFT";
 
 interface AuctionInfoProps {
   auctionAddress: `0x${string}`;
+  entryFee: bigint;
+  usdt: GeneralTypes.Usdt;
 }
 
-export default function AuctionInfo({ auctionAddress }: AuctionInfoProps) {
+export default function AuctionInfo({ auctionAddress, entryFee, usdt }: AuctionInfoProps) {
 
   const [yatchInfo, setYatchInfo] = useState<CharterAuctionTypes.YachtInfo>(yachtInfoTemp);
 
@@ -34,41 +35,6 @@ export default function AuctionInfo({ auctionAddress }: AuctionInfoProps) {
     abi: CharterAuctionABI as Abi,
     functionName: "nft",
     // Error handling moved to useEffect
-  }) as GeneralTypes.ReadContractTypes;
-
-  const {
-    data: usdtAddress,
-    error: usdtAddressError,
-    // isLoading: isNftAddressLoading,
-    // refetch: refetchNftAddress,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "usdt",
-    // Error handling moved to useEffect
-  }) as GeneralTypes.ReadContractTypes;
-
-  const {
-    data: usdtDecimals,
-    error: usdtDecimalsError,
-    // isLoading: isNftAddressLoading,
-    // refetch: refetchNftAddress,
-  } = useReadContract({
-    address: usdtAddress as `0x${string}`,
-    abi: ERC20ABI as Abi,
-    functionName: "decimals",
-    // Error handling moved to useEffect
-  }) as GeneralTypes.ReadContractTypes;
-
-  const {
-    data: entryFee,
-    error: entryFeeError,
-    // isLoading: isEntryFeeLoading,
-    // refetch: refetchEntryFee,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "entryFee",
   }) as GeneralTypes.ReadContractTypes;
 
   const {
@@ -110,10 +76,6 @@ export default function AuctionInfo({ auctionAddress }: AuctionInfoProps) {
       toast.error("Failed to fetch NFT address.", { id: "nftAddressLoading" });
     }
 
-    if (entryFeeError) {
-      toast.error("Failed to fetch entry fee.", { id: "entryFeeLoading" });
-    }
-
     if (nftIdError) {
       toast.error("Failed to fetch NFT ID.", { id: "nftIdLoading" });
     }
@@ -122,18 +84,10 @@ export default function AuctionInfo({ auctionAddress }: AuctionInfoProps) {
       toast.error("Failed to fetch token URI.", { id: "tokenURILoading" });
     }
 
-    if (usdtAddressError) {
-      toast.error("Failed to fetch USDT address.", { id: "usdtAddressLoading" });
-    }
-
-    if (usdtDecimalsError) {
-      toast.error("Failed to fetch USDT decimals.", { id: "usdtDecimalsLoading" });
-    }
-
     if (reservePriceError) {
       toast.error("Failed to fetch reserve funds.", { id: "reserveFundsLoading" });
     }
-  }, [nftAddressError, entryFeeError, nftIdError, tokenURIError, usdtAddressError, usdtDecimalsError, reservePriceError]);
+  }, [nftAddressError, nftIdError, tokenURIError, reservePriceError]);
 
   useEffect(() => {
     if (entryFee) {
@@ -143,14 +97,14 @@ export default function AuctionInfo({ auctionAddress }: AuctionInfoProps) {
           if (item.label === "Entry Fee:") {
             return {
               ...item,
-              value: formatUnits(entryFee ? BigInt(entryFee.toString()) : BigInt(0), usdtDecimals ? Number(usdtDecimals.toString()) : 18) + " USDT"
+              value: formatUnits(entryFee ? BigInt(entryFee.toString()) : BigInt(0), usdt?.decimals ? Number(usdt?.decimals) : 18) + " USDT"
             };
           }
 
           if (item.label === "Reserve Price:") {
             return {
               ...item,
-              value: formatUnits(reservePrice ? BigInt(reservePrice.toString()) : BigInt(0), usdtDecimals ? Number(usdtDecimals.toString()) : 18) + " USDT"
+              value: formatUnits(reservePrice ? BigInt(reservePrice.toString()) : BigInt(0), usdt?.decimals ? Number(usdt?.decimals) : 18) + " USDT"
             };
           }
           return item;
@@ -165,7 +119,7 @@ export default function AuctionInfo({ auctionAddress }: AuctionInfoProps) {
       //   image: tokenURI.toString()
       // }));
     }
-  }, [tokenURI, entryFee, usdtDecimals, reservePrice]);
+  }, [tokenURI, entryFee, usdt?.decimals, reservePrice]);
 
   return (
     <div>
