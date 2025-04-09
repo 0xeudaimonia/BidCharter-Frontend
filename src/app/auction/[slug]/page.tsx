@@ -44,15 +44,15 @@ export default function AuctionByIdPage() {
 
   useEffect(() => {
     if (isTxLoading) {
-      toast.loading("Transaction is pending...", { id: "transactionPending" });
+      toast.loading("Transaction is pending...", { id: "transactionLoading" });
     }
 
     if (isTxSuccess) {
-      toast.success("Transaction was successful!", { id: "transactionPending" });
+      toast.success("Transaction was successful!", { id: "transactionLoading" });
     }
 
     if (isTxError) {
-      toast.error("Transaction failed!", { id: "transactionPending" });
+      toast.error("Transaction failed!", { id: "transactionLoading" });
     }
   }, [isTxSuccess, isTxLoading, isTxError]);
 
@@ -109,55 +109,6 @@ export default function AuctionByIdPage() {
   }, [nftAddressError]);
 
   const {
-    data: currentRound,
-    error: currentRoundError,
-    // isLoading: isCurrentRoundLoading,
-    refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "currentRound",
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    // if (isCurrentRoundLoading) {
-    //   toast.loading("Fetching current round...", { id: "currentRoundLoading" });
-    // }
-
-    if (currentRoundError) {
-      toast.error("Failed to fetch current round.", { id: "currentRoundLoading" });
-    }
-
-    // if (currentRound) {
-    //   toast.success("Current round fetched successfully!", { id: "currentRoundLoading" });
-    // }
-  }, [currentRoundError]);
-  const {
-    data: isBlindRoundEnded,
-    error: isBlindRoundEndedError,
-    // isLoading: isBlindRoundEndedLoading,
-    // refetch: refetchIsBlindRoundEnded,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "isBlindRoundEnded",
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    // if (isBlindRoundEndedLoading) {
-    //   toast.loading("Fetching isBlindRoundEnded...", { id: "isBlindRoundEndedLoading" });
-    // }
-
-    if (isBlindRoundEndedError) {
-      toast.error("Failed to fetch isBlindRoundEnded.", { id: "isBlindRoundEndedLoading" });
-    }
-
-    // if (isBlindRoundEnded) {
-    //   toast.success("isBlindRoundEnded fetched successfully!", { id: "isBlindRoundEndedLoading" });
-    // }
-  }, [isBlindRoundEndedError]);
-
-  const {
     data: entryFee,
     error: entryFeeError,
     // isLoading: isEntryFeeLoading,
@@ -207,46 +158,6 @@ export default function AuctionByIdPage() {
     //   toast.success("Rewards fetched successfully!", { id: "rewardsLoading" });
     // }
   }, [rewardsError]);
-
-  // const {
-  //   data: positions,
-  //   error: positionsError,
-  //   // isLoading: isPositionsLoading,
-  //   refetch: refetchPositions,
-  // } = useReadContract({
-  //   address: auctionAddress as `0x${string}`,
-  //   abi: CharterAuctionABI as Abi,
-  //   functionName: "getRoundPositions",
-  //   args: [currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0)],
-  // }) as GeneralTypes.ReadContractTypes;
-  
-  const {
-    data: targetPrice,
-    error: targetPriceError,
-    // isLoading: isTargetPriceLoading,
-    // refetch: refetchTargetPrice,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "getTargetPrice",
-    args: [
-      currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
-    ],
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    if (targetPriceError) {
-      toast.error("Failed to fetch target price.", { id: "targetPriceLoading" });
-    }
-
-    // if (targetPrice) {
-    //   toast.success("Target price fetched successfully!", { id: "targetPriceLoading" });
-    // }
-
-    // if (isTargetPriceLoading) {
-    //   toast.loading("Fetching target price...", { id: "targetPriceLoading" });
-    // }
-  }, [targetPriceError]);
 
   const {
     data: winner,
@@ -327,7 +238,6 @@ export default function AuctionByIdPage() {
   const [nftMetadata, setNftMetadata] = useState<CharterAuctionTypes.NFTMetadata | null>(null);
 
   console.log("nftMetadata", nftMetadata);
-  console.log("isBlindRoundEnded", isBlindRoundEnded);
 
   useEffect(() => {
     if (tokenURI) {
@@ -366,7 +276,7 @@ export default function AuctionByIdPage() {
     eventName: "BidPosition",
     onLogs: (logs) => {
       console.log("BidPosition event:", logs);
-      refetchCurrentRound?.();
+      // refetchCurrentRound?.();
       // refetchPositions?.();
     },
   });
@@ -422,7 +332,7 @@ export default function AuctionByIdPage() {
     eventName: "NewRoundStarted",
     onLogs: (logs) => {
       console.log("NewRoundStarted event:", logs);
-      refetchCurrentRound?.();
+      // refetchCurrentRound?.();
       // refetchPositions?.();
     },
   });
@@ -441,7 +351,7 @@ export default function AuctionByIdPage() {
     eventName: "EndAuction",
     onLogs: (logs) => {
       console.log("EndAuction event:", logs);
-      refetchCurrentRound?.();
+      // refetchCurrentRound?.();
       // refetchPositions?.();
     },
   });
@@ -471,7 +381,7 @@ export default function AuctionByIdPage() {
             </p>
           </Link>
         </div>
-        <RoundInfo />
+        <RoundInfo auctionAddress={auctionAddress as `0x${string}`} />
 
         <div className="sm:w-auto w-full">
           <button className="cursor-pointer sm:w-auto w-full bg-[#204119] text-sm text-[#CAFFDB] py-5 px-10">
@@ -490,7 +400,7 @@ export default function AuctionByIdPage() {
         </div>
 
         <div className="w-full md:w-[40%]">
-          <BidChart chartData={chartData} graphbarData={graphbarData} targetPrice={targetPrice?.toString() || "0.00"} />
+          <BidChart chartData={chartData} graphbarData={graphbarData} targetPrice={"0.00"} />
         </div>
 
         <div className="w-full md:w-[20%] flex flex-col justify-items-end sm:gap-[30%]">
