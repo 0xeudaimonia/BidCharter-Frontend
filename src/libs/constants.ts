@@ -7,7 +7,7 @@ export const charterFactoryContractAddress: `0x${string}` = isValidAddress(
   ? process.env.NEXT_PUBLIC_CHARTER_FACTORY_CONTRACT_ADDRESS
   : "0xA8c39E72F2e5fb316bb6B39638A99179315e12bE";
 
-export const yachtInfo = {
+export const yachtInfoTemp = {
   title: "KING BENJI Yacht Charter",
   image: "/yacht.png",
   details: [
@@ -17,9 +17,9 @@ export const yachtInfo = {
       value: `21.06-28.06\n28.06-05.07\n28.08-30.08`,
     },
     {
-      label: "Reserve Price (weekly):",
+      label: "Reserve Price:",
       value: "$300,000.00",
-      bold: true,
+      bold: false,
     },
     { label: "Entry Fee:", value: "$1,000.00" },
     { label: "Blind Bid:", value: "$12,000.00" },

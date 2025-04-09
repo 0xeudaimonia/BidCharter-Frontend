@@ -4,6 +4,12 @@ type InfoRowProps = {
   bold?: boolean;
 };
 
+export type YachtInfo = {
+  title: string;
+  image: string;
+  details: InfoRowProps[];
+};
+
 type NFTMetadataAttributes = {
   trait_type: string;
   value: string;
