@@ -21,7 +21,8 @@ import AuctionInfo from "@/src/components/auction/AuctionInfo";
 import RoundInfo from "@/src/components/auction/RoundInfo";
 import BidActivity from "@/src/components/auction/BidActivity";
 import BidChart from "@/src/components/auction/BidChart";
-
+import BlindBidCart from "@/src/components/auction/BlindBidCart";
+import { ERC20ABI } from "@/src/libs/abi/ERC20";
 
 export default function AuctionByIdPage() {
   const params = useParams();
@@ -67,19 +68,58 @@ export default function AuctionByIdPage() {
     args: [BigInt(auctionId)],
   }) as GeneralTypes.ReadContractTypes;
 
-  useEffect(() => {
-    // if (isAuctionAddressLoading) {
-    //   toast.loading("Fetching auction address...", { id: "auctionAddressLoading" });
-    // }
+  const {
+    data: usdtAddress,
+    error: usdtAddressError,
+    // isLoading: isNftAddressLoading,
+    // refetch: refetchNftAddress,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "usdt",
+    // Error handling moved to useEffect
+  }) as GeneralTypes.ReadContractTypes;
 
+  const {
+    data: usdtDecimals,
+    error: usdtDecimalsError,
+    // isLoading: isNftAddressLoading,
+    // refetch: refetchNftAddress,
+  } = useReadContract({
+    address: usdtAddress as `0x${string}`,
+    abi: ERC20ABI as Abi,
+    functionName: "decimals",
+    // Error handling moved to useEffect
+  }) as GeneralTypes.ReadContractTypes;
+
+  const {
+    data: entryFee,
+    error: entryFeeError,
+    // isLoading: isEntryFeeLoading,
+    // refetch: refetchEntryFee,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "entryFee",
+  }) as GeneralTypes.ReadContractTypes;
+
+  useEffect(() => {
     if (auctionAddressError) {
       toast.error("Failed to fetch auction address.", { id: "auctionAddressLoading" });
     }
 
-    // if (auctionAddress) {
-    //   toast.success("Auction address fetched successfully!", { id: "auctionAddressLoading" });
-    // }
-  }, [auctionAddressError]);
+    if (usdtAddressError) {
+      toast.error("Failed to fetch usdt address.", { id: "usdtAddressLoading" });
+    }
+
+    if (usdtDecimalsError) {
+      toast.error("Failed to fetch usdt decimals.", { id: "usdtDecimalsLoading" });
+    }
+
+    if (entryFeeError) {
+      toast.error("Failed to fetch entry fee.", { id: "entryFeeLoading" });
+    }
+  }, [auctionAddressError, usdtAddressError, usdtDecimalsError, entryFeeError]);
 
   const {
     data: rewards,
@@ -269,8 +309,27 @@ export default function AuctionByIdPage() {
 
       <div className="flex flex-col md:flex-row justify-between gap-7 mt-8">
         <div className="w-full md:w-[20%]">
-          <AuctionInfo auctionAddress={auctionAddress as `0x${string}`} />
+          <AuctionInfo 
+            auctionAddress= {
+              auctionAddress as `0x${string}`
+            } 
+            usdt={ { 
+              address: usdtAddress as `0x${string}`, 
+              decimals: usdtDecimals as bigint 
+            } } 
+            entryFee={entryFee as bigint} 
+            />
           <ShoppingCart />
+          <BlindBidCart 
+            auctionAddress= {
+              auctionAddress as `0x${string}`
+            } 
+            usdt={ { 
+              address: usdtAddress as `0x${string}`, 
+              decimals: usdtDecimals as bigint 
+            } } 
+            entryFee={entryFee as bigint} 
+            />
         </div>
         <div className="w-full md:w-[20%]">
           <BidActivity positions={bidPositions} handleBidPosition={handleBidPosition} />
