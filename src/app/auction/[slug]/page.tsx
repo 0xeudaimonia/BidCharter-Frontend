@@ -1,7 +1,7 @@
 "use client";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import {
   useAccount,
   useReadContract,
@@ -14,8 +14,7 @@ import { useParams } from "next/navigation";
 import { charterFactoryContractAddress, chartData, graphbarData, bidPositions } from "@/src/libs/constants";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
-import { CharterNFTABI } from "@/src/libs/abi/CharterNFT";
-import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
+import { GeneralTypes } from "@/src/types";
 import { toast } from "sonner";
 import ShoppingCart from "@/src/components/auction/ShoppingCart";
 import AuctionInfo from "@/src/components/auction/AuctionInfo";
@@ -83,57 +82,6 @@ export default function AuctionByIdPage() {
   }, [auctionAddressError]);
 
   const {
-    data: nftAddress,
-    error: nftAddressError,
-    // isLoading: isNftAddressLoading,
-    refetch: refetchNftAddress,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "nft",
-    // Error handling moved to useEffect
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    // if (isNftAddressLoading) {
-    //   toast.loading("Fetching NFT address...", { id: "nftAddressLoading" });
-    // }
-
-    if (nftAddressError) {
-      toast.error("Failed to fetch NFT address.", { id: "nftAddressLoading" });
-    }
-
-    // if (nftAddress) {
-    //   toast.success("NFT address fetched successfully!", { id: "nftAddressLoading" });
-    // }
-  }, [nftAddressError]);
-
-  const {
-    data: entryFee,
-    error: entryFeeError,
-    // isLoading: isEntryFeeLoading,
-    // refetch: refetchEntryFee,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "entryFee",
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    if (entryFeeError) {
-      toast.error("Failed to fetch entry fee.", { id: "entryFeeLoading" });
-    }
-
-    // if (entryFee) {
-    //   toast.success("Entry fee fetched successfully!", { id: "entryFeeLoading" });
-    // }
-
-    // if (isEntryFeeLoading) {
-    //   toast.loading("Fetching entry fee...", { id: "entryFeeLoading" });
-    // }
-  }, [entryFee, entryFeeError]);
-
-  const {
     data: rewards,
     error: rewardsError,
     // isLoading: isRewardsLoading,
@@ -183,77 +131,6 @@ export default function AuctionByIdPage() {
     //   toast.loading("Fetching winner...", { id: "winnerLoading" });
     // }
   }, [winnerError]);
-
-  const {
-    data: nftId,
-    error: nftIdError,
-    // isLoading: isNftIdLoading,
-    // refetch: refetchNftId,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "nftId",
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    if (nftIdError) {
-      toast.error("Failed to fetch NFT ID.", { id: "nftIdLoading" });
-    }
-
-    // if (nftId) {
-    //   toast.success("NFT ID fetched successfully!", { id: "nftIdLoading" });
-    // }
-
-    // if (isNftIdLoading) {
-    //   toast.loading("Fetching NFT ID...", { id: "nftIdLoading" });
-    // }
-  }, [nftIdError]);
-
-  const {
-    data: tokenURI,
-    error: tokenURIError,
-    // isLoading: isTokenURILoading,
-    // refetch: refetchTokenURI,
-  } = useReadContract({
-    address: nftAddress as `0x${string}`,
-    abi: CharterNFTABI,
-    functionName: "tokenURI",
-    args: nftId ? [BigInt(nftId.toString())] : [BigInt(0)],
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    if (tokenURIError) {
-      toast.error("Failed to fetch token URI.", { id: "tokenURILoading" });
-    }
-
-    // if (isTokenURILoading) {
-    //   toast.loading("Fetching token URI...", { id: "tokenURILoading" });
-    // }
-
-    // if (tokenURI) {
-    //   toast.success("Token URI fetched successfully!", { id: "tokenURILoading" });
-    // }
-  }, [tokenURIError]);
-
-  const [nftMetadata, setNftMetadata] = useState<CharterAuctionTypes.NFTMetadata | null>(null);
-
-  console.log("nftMetadata", nftMetadata);
-
-  useEffect(() => {
-    if (tokenURI) {
-      if (typeof tokenURI === "string") {
-        fetch(tokenURI)
-          .then((res) => res.json())
-          .then((data) => setNftMetadata(data))
-          .catch((err) => {
-            console.error("Failed to fetch NFT metadata:", err);
-            toast.error("Failed to fetch NFT metadata.");
-          });
-      } else {
-        toast.error("Invalid tokenURI.");
-      }
-    }
-  }, [tokenURI]);
 
   // Auction info derived from contract data
   const auctionInfo = {
@@ -314,7 +191,7 @@ export default function AuctionByIdPage() {
     eventName: "NFTWithdrawn",
     onLogs: (logs) => {
       console.log("NFTWithdrawn event:", logs);
-      refetchNftAddress?.();
+      // refetchNftAddress?.();
     },
   });
 
@@ -392,7 +269,7 @@ export default function AuctionByIdPage() {
 
       <div className="flex flex-col md:flex-row justify-between gap-7 mt-8">
         <div className="w-full md:w-[20%]">
-          <AuctionInfo />
+          <AuctionInfo auctionAddress={auctionAddress as `0x${string}`} />
           <ShoppingCart />
         </div>
         <div className="w-full md:w-[20%]">
