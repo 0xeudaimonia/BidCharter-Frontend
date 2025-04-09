@@ -29,8 +29,37 @@ type BarData = {
 };
 
 type Position = {
-  rewarders: `0x${string}`[];
-  bidPrice: bigint;
+  seat: string;
+  price: string;
 };
 
-export type { InfoRowProps, NFTMetadataAttributes, NFTMetadata, ChartData, BarData, Position };
+type RoundInfo = {
+  title: string;
+  round: string;
+  myPosition: string;
+  targetPrice: string;
+  actionsLeft: string;
+  myStake: string;
+  auctionTime: string;  
+};
+
+type RoundInfoItem = {
+  label: string;
+  value: string;
+};
+
+type ChartDataItem = {
+  round: string;
+  price: number;
+  leftBid: number;
+  rightBid: number;
+};
+
+type GraphbarItem = {
+  round: string;
+  price: number;
+  fillValue: number;
+};
+
+
+export type { InfoRowProps, NFTMetadataAttributes, NFTMetadata, ChartData, BarData, Position, RoundInfo, RoundInfoItem, ChartDataItem, GraphbarItem };
