@@ -243,17 +243,6 @@ export default function AuctionByIdPage() {
     });
   };
 
-  useWatchContractEvent({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    eventName: "NewRoundStarted",
-    onLogs: (logs) => {
-      console.log("NewRoundStarted event:", logs);
-      // refetchCurrentRound?.();
-      // refetchPositions?.();
-    },
-  });
-
   const handleEndAuction = () => {
     writeContract({
       address: auctionAddress as `0x${string}`,

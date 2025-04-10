@@ -66,3 +66,23 @@ export type GraphbarItem = {
   price: number;
   fillValue: number;
 };
+
+
+export type BlindBidInfo = {
+  auctionAddress: string;
+  bidder: string;
+  createdAt: string;
+  id: number;
+  price: string;
+  updatedAt: string;
+};
+
+export type BlindBidFetchResponse = {
+  data?: BlindBidInfo[];
+  error?: string;
+};
+
+export type BidAtBlindRoundResponse = {
+  message?: string;
+  error?: string;
+};

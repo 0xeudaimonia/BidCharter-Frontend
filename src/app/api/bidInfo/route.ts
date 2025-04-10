@@ -2,10 +2,24 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import prisma from '@/src/libs/prisma';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const { searchParams } = new URL(req.url);
+  const auctionAddress = searchParams.get('auctionAddress');
+
+  if (!auctionAddress) {
+    return NextResponse.json({ error: 'Missing auctionAddress' }, { status: 400 });
+  }
+
   try {
-    const bidInfo = await prisma.bidderInfo.findMany();
-    return NextResponse.json(bidInfo, { status: 200 });
+    const bidInfo = await prisma.bidderInfo.findMany({
+      where: {
+        auctionAddress: auctionAddress as string,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+    });
+    return NextResponse.json({ data: bidInfo }, { status: 200 });
   } catch (error) {
     console.error('Error fetching bid info:', error);
     return NextResponse.json({ error: 'Error fetching bid info' }, { status: 500 });
