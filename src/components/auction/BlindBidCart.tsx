@@ -105,6 +105,7 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
     abi: CharterAuctionABI as Abi,
     eventName: "BlindBidEntered",
     onLogs: (logs) => {
+      console.log("BlindBidEntered event:", logs);
       toast.success("Blind bid entered.");
       // refetchCurrentRound?.();
       // refetchPositions?.();
