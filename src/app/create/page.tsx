@@ -12,9 +12,10 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import LoadingSkeleton from "@/src/components/LoadingSkeleton";
 import { toast } from "sonner";
-import { Abi } from "viem";
+import { Abi, parseUnits } from "viem";
 
 import { AuctionCreateTypes, GeneralTypes } from "@/src/types";
+import { ERC20ABI } from "@/src/libs/abi/ERC20";
 
 export default function AuctionCreatePage() {
   // State
@@ -41,7 +42,7 @@ export default function AuctionCreatePage() {
       address: charterFactoryContractAddress,
       abi: CharterFactoryABI as Abi,
       functionName: "getAuctionAddress",
-      args: [auctionId] as const,
+      args: [auctionId + 1] as const,
     }));
   }, [totalAuctions]);
 
@@ -54,6 +55,30 @@ export default function AuctionCreatePage() {
     contracts: auctionContracts,
   }) as AuctionCreateTypes.FetchAuctionAddresses;
 
+  const {
+    data: usdtAddress,
+    error: usdtAddressError,
+    // isLoading: isNftAddressLoading,
+    // refetch: refetchNftAddress,
+  } = useReadContract({
+    address: charterFactoryContractAddress as `0x${string}`,
+    abi: CharterFactoryABI as Abi,
+    functionName: "usdt",
+    // Error handling moved to useEffect
+  }) as GeneralTypes.ReadContractTypes;
+
+  const {
+    data: usdtDecimals,
+    error: usdtDecimalsError,
+    // isLoading: isNftAddressLoading,
+    // refetch: refetchNftAddress,
+  } = useReadContract({
+    address: usdtAddress as `0x${string}`,
+    abi: ERC20ABI as Abi,
+    functionName: "decimals",
+    // Error handling moved to useEffect
+  }) as GeneralTypes.ReadContractTypes;
+
   useEffect(() => {
     if (totalAuctionsError) {
       toast.error(totalAuctionsError.message.split(".")[0]);
@@ -62,7 +87,16 @@ export default function AuctionCreatePage() {
     if (auctionAddressesError) {
       toast.error(auctionAddressesError.message.split(".")[0]);
     }
-  }, [totalAuctionsError, auctionAddressesError]);
+
+    if (usdtAddressError) {
+      toast.error(usdtAddressError.message.split(".")[0]);
+    }
+
+    if (usdtDecimalsError) {
+      toast.error(usdtDecimalsError.message.split(".")[0]);
+    }
+    
+  }, [totalAuctionsError, auctionAddressesError, usdtAddressError, usdtDecimalsError]);
 
   useEffect(() => {
     if (createAuctionPending) {
@@ -126,11 +160,14 @@ export default function AuctionCreatePage() {
       return;
     }
 
+    const seatPriceBigInt = parseUnits(seatPrice, Number(usdtDecimals));
+    const reservesBigInt = parseUnits(reserves, Number(usdtDecimals));
+
     writeContract({
       abi: CharterFactoryABI as Abi,
       address: charterFactoryContractAddress as `0x${string}`,
       functionName: "createAuction",
-      args: [BigInt(seatPrice), BigInt(reserves)],
+      args: [seatPriceBigInt, reservesBigInt],
     });
     setInputValues({});
   };

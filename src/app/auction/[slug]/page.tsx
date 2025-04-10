@@ -27,7 +27,7 @@ import { ERC20ABI } from "@/src/libs/abi/ERC20";
 export default function AuctionByIdPage() {
   const params = useParams();
   const { slug } = params;
-  const auctionId = slug as string;
+  const auctionId = Number(slug) + 1;
 
   const { address } = useAccount();
 
