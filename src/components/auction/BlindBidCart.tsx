@@ -13,6 +13,8 @@ import { Abi, parseUnits, encodePacked, keccak256 } from "viem";
 import { GeneralTypes } from "@/src/types";
   
 import InfoRow from "./InfoRow";
+import { saveBidderInfo } from "@/src/utils/api";
+
 interface BlindBidCartProps {
   auctionAddress: `0x${string}`;
   usdt: GeneralTypes.Usdt;
@@ -69,6 +71,7 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
 
     const bidInfo = keccak256(encodedData);
     console.log("bidInfo", bidInfo);
+    console.log("usdtAllowance", usdtAllowance);
 
     writeContract({
       address: auctionAddress as `0x${string}`,
@@ -77,10 +80,12 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
       args: [bidInfo],
     }, {
       onSuccess: () => {
-        console.log("Blind Bid");
+        console.log("Success Blind Bid");
+        saveBidderInfo(auctionAddress?.toString() as string, address?.toString() as string, blindBidPrice.toString());
       },
       onError: (error) => {
         console.error("Error blind bidding:", error);
+        toast.error("Failed to blind bid.");
       }
     });
   };
@@ -100,13 +105,11 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
     abi: CharterAuctionABI as Abi,
     eventName: "BlindBidEntered",
     onLogs: (logs) => {
-      console.log("BlindBidEntered event:", logs);
+      toast.success("Blind bid entered.");
       // refetchCurrentRound?.();
       // refetchPositions?.();
     },
   });
-
-  console.log("usdtAllowance", usdtAllowance);
 
   return (
     <div>
