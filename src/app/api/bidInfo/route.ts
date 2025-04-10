@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import prisma from '@/src/libs/prisma';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const bidInfo = await prisma.bidderInfo.findMany();
     return NextResponse.json(bidInfo, { status: 200 });
   } catch (error) {
+    console.error('Error fetching bid info:', error);
     return NextResponse.json({ error: 'Error fetching bid info' }, { status: 500 });
   }
 }
@@ -67,27 +68,27 @@ export async function POST(req: NextRequest) {
   }
 }
 
-export async function PUT(req: NextRequest) {
-  // try {
-  //   const { id, title, description, points } = await req.json();
-  //   const updatedReward = await prisma.dailyReward.update({
-  //     where: { id },
-  //     data: { title, description, points }
-  //   });
-  //   return NextResponse.json(updatedReward, { status: 200 });
-  // } catch (error) {
-  //   return NextResponse.json({ error: 'Error updating reward' }, { status: 500 });
-  // }
-}
+// export async function PUT(req: NextRequest) {
+//   // try {
+//   //   const { id, title, description, points } = await req.json();
+//   //   const updatedReward = await prisma.dailyReward.update({
+//   //     where: { id },
+//   //     data: { title, description, points }
+//   //   });
+//   //   return NextResponse.json(updatedReward, { status: 200 });
+//   // } catch (error) {
+//   //   return NextResponse.json({ error: 'Error updating reward' }, { status: 500 });
+//   // }
+// }
 
-export async function DELETE(req: NextRequest) {
-  // try {
-  //   const { id } = await req.json();
-  //   await prisma.dailyReward.delete({
-  //     where: { id }
-  //   });
-  //   return new NextResponse(null, { status: 204 });
-  // } catch (error) {
-  //   return NextResponse.json({ error: 'Error deleting reward' }, { status: 500 });
-  // }
-}
+// export async function DELETE(req: NextRequest) {
+//   // try {
+//   //   const { id } = await req.json();
+//   //   await prisma.dailyReward.delete({
+//   //     where: { id }
+//   //   });
+//   //   return new NextResponse(null, { status: 204 });
+//   // } catch (error) {
+//   //   return NextResponse.json({ error: 'Error deleting reward' }, { status: 500 });
+//   // }
+// }
