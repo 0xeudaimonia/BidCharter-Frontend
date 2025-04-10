@@ -10,10 +10,10 @@ import { toast } from "sonner";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
 import { Abi, parseUnits, encodePacked, keccak256 } from "viem";
-import { GeneralTypes } from "@/src/types";
+import { GeneralTypes, CharterAuctionTypes } from "@/src/types";
   
 import InfoRow from "./InfoRow";
-import { saveBidderInfo } from "@/src/utils/api";
+import { fetchBlindBidInfos, saveBidderInfo } from "@/src/utils/api";
 
 interface BlindBidCartProps {
   auctionAddress: `0x${string}`;
@@ -79,9 +79,14 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
       functionName: "bidAtBlindRound",
       args: [bidInfo],
     }, {
-      onSuccess: () => {
+      onSuccess: async () => {
         console.log("Success Blind Bid");
-        saveBidderInfo(auctionAddress?.toString() as string, address?.toString() as string, blindBidPrice.toString());
+        const result = await saveBidderInfo(auctionAddress?.toString() as string, address?.toString() as string, blindBidPrice.toString());
+        if (result.error) {
+          toast.error("Failed to save bidder info.");
+        } else {
+          toast.success(result.message);
+        }
       },
       onError: (error) => {
         console.error("Error blind bidding:", error);
@@ -89,6 +94,36 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
       }
     });
   };
+
+  const handleBlindEnd = async () => {
+    const res = await fetchBlindBidInfos(auctionAddress as string);
+    if(res.error) {
+      toast.error("Failed to fetch blind bid infos.");
+      return;
+    }
+
+    if (!res.data || res.data.length === 0) {
+      toast.error("Blind round not ended.");
+      return;
+    }
+
+    const prices = res.data.map((bidInfo: CharterAuctionTypes.BlindBidInfo) => parseUnits(bidInfo.price, Number(usdt?.decimals)));
+
+    writeContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "endBlindRound",
+      args: [[...prices]]
+    }, {
+      onSuccess: () => {
+        toast.success("Blind round ended.");
+      },
+      onError: (error) => {
+        console.error("Error ending blind round:", error);
+        toast.error("Failed to end blind round.");
+      }
+    });
+  }
 
   useWatchContractEvent({
     address: usdt?.address as `0x${string}`,
@@ -109,6 +144,17 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
       toast.success("Blind bid entered.");
       // refetchCurrentRound?.();
       // refetchPositions?.();
+    },
+  });
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "NewRoundStarted",
+    onLogs: (logs) => {
+      console.log("NewRoundStarted event:", logs);
+      toast.success("New round started.");
+      // refetchAllowance?.();
     },
   });
 
@@ -134,6 +180,14 @@ export default function BlindBidCart({ auctionAddress, usdt, entryFee }: BlindBi
               onClick={handleBlindBid}
             >
               Blind Bid
+            </button>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 mt-3 sm:mb-0 mb-3">
+            <button
+              className="cursor-pointer sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
+              onClick={handleBlindEnd}
+            >
+              End Blind Round
             </button>
           </div>
         </div>
