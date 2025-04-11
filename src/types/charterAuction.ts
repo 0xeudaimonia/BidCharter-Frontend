@@ -39,6 +39,16 @@ export type Position = {
   price: string;
 };
 
+export type FetchRoundPositionBidPrice = {
+  data: {
+    result: bigint;
+    status: string
+  }[];
+  refetch: () => void;
+  isLoading: boolean;
+  error: Error | null;
+};
+
 export type RoundInfo = {
   title: string;
   round: string;
@@ -46,7 +56,7 @@ export type RoundInfo = {
   targetPrice: string;
   actionsLeft: string;
   myStake: string;
-  auctionTime: string;  
+  auctionTime: string;
 };
 
 export type RoundInfoItem = {
