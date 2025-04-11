@@ -11,7 +11,11 @@ import {
 } from "wagmi";
 import { Abi, formatEther } from "viem";
 import { useParams } from "next/navigation";
-import { charterFactoryContractAddress, chartData, graphbarData, bidPositions } from "@/src/libs/constants";
+import {
+  charterFactoryContractAddress,
+  chartData,
+  graphbarData,
+} from "@/src/libs/constants";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { GeneralTypes } from "@/src/types";
@@ -31,10 +35,7 @@ export default function AuctionByIdPage() {
 
   const { address } = useAccount();
 
-  const {
-    data: writeTxHash,
-    writeContract,
-  } = useWriteContract();
+  const { data: writeTxHash, writeContract } = useWriteContract();
 
   const {
     isLoading: isTxLoading,
@@ -48,7 +49,9 @@ export default function AuctionByIdPage() {
     }
 
     if (isTxSuccess) {
-      toast.success("Transaction was successful!", { id: "transactionLoading" });
+      toast.success("Transaction was successful!", {
+        id: "transactionLoading",
+      });
     }
 
     if (isTxError) {
@@ -105,15 +108,21 @@ export default function AuctionByIdPage() {
 
   useEffect(() => {
     if (auctionAddressError) {
-      toast.error("Failed to fetch auction address.", { id: "auctionAddressLoading" });
+      toast.error("Failed to fetch auction address.", {
+        id: "auctionAddressLoading",
+      });
     }
 
     if (usdtAddressError) {
-      toast.error("Failed to fetch usdt address.", { id: "usdtAddressLoading" });
+      toast.error("Failed to fetch usdt address.", {
+        id: "usdtAddressLoading",
+      });
     }
 
     if (usdtDecimalsError) {
-      toast.error("Failed to fetch usdt decimals.", { id: "usdtDecimalsLoading" });
+      toast.error("Failed to fetch usdt decimals.", {
+        id: "usdtDecimalsLoading",
+      });
     }
 
     if (entryFeeError) {
@@ -298,34 +307,37 @@ export default function AuctionByIdPage() {
 
       <div className="flex flex-col md:flex-row justify-between gap-7 mt-8">
         <div className="w-full md:w-[20%]">
-          <AuctionInfo 
-            auctionAddress= {
-              auctionAddress as `0x${string}`
-            } 
-            usdt={ { 
-              address: usdtAddress as `0x${string}`, 
-              decimals: usdtDecimals as bigint 
-            } } 
-            entryFee={entryFee as bigint} 
-            />
+          <AuctionInfo
+            auctionAddress={auctionAddress as `0x${string}`}
+            usdt={{
+              address: usdtAddress as `0x${string}`,
+              decimals: usdtDecimals as bigint,
+            }}
+            entryFee={entryFee as bigint}
+          />
           <ShoppingCart />
-          <BlindBidCart 
-            auctionAddress= {
-              auctionAddress as `0x${string}`
-            } 
-            usdt={ { 
-              address: usdtAddress as `0x${string}`, 
-              decimals: usdtDecimals as bigint 
-            } } 
-            entryFee={entryFee as bigint} 
-            />
+          <BlindBidCart
+            auctionAddress={auctionAddress as `0x${string}`}
+            usdt={{
+              address: usdtAddress as `0x${string}`,
+              decimals: usdtDecimals as bigint,
+            }}
+            entryFee={entryFee as bigint}
+          />
         </div>
         <div className="w-full md:w-[20%]">
-          <BidActivity positions={bidPositions} handleBidPosition={handleBidPosition} />
+          <BidActivity
+            handleBidPosition={handleBidPosition}
+            auctionAddress={auctionAddress as `0x${string}`}
+          />
         </div>
 
         <div className="w-full md:w-[40%]">
-          <BidChart chartData={chartData} graphbarData={graphbarData} targetPrice={"0.00"} />
+          <BidChart
+            chartData={chartData}
+            graphbarData={graphbarData}
+            targetPrice={"0.00"}
+          />
         </div>
 
         <div className="w-full md:w-[20%] flex flex-col justify-items-end sm:gap-[30%]">
