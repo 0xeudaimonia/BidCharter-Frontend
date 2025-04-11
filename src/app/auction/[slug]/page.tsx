@@ -27,7 +27,7 @@ import { ERC20ABI } from "@/src/libs/abi/ERC20";
 export default function AuctionByIdPage() {
   const params = useParams();
   const { slug } = params;
-  const auctionId = slug as string;
+  const auctionId = Number(slug) + 1;
 
   const { address } = useAccount();
 
@@ -242,17 +242,6 @@ export default function AuctionByIdPage() {
       functionName: "turnToNextRound",
     });
   };
-
-  useWatchContractEvent({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    eventName: "NewRoundStarted",
-    onLogs: (logs) => {
-      console.log("NewRoundStarted event:", logs);
-      // refetchCurrentRound?.();
-      // refetchPositions?.();
-    },
-  });
 
   const handleEndAuction = () => {
     writeContract({
