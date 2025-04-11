@@ -38,7 +38,7 @@ export default function AuctionListPage() {
       address: charterFactoryContractAddress,
       abi: CharterFactoryABI as Abi,
       functionName: "getAuctionAddress",
-      args: [auctionId] as const,
+      args: [auctionId + 1] as const,
     }));
   }, [totalAuctions]);
 
