@@ -1,32 +1,28 @@
 "use client";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Link from "next/link";
-import React, { useEffect } from "react";
-import {
-  useAccount,
-  useReadContract,
-  useWriteContract,
-  useWaitForTransactionReceipt,
-  useWatchContractEvent,
-} from "wagmi";
-import { Abi, formatEther } from "viem";
-import { useParams } from "next/navigation";
-import {
-  charterFactoryContractAddress,
-  chartData,
-  graphbarData,
-} from "@/src/libs/constants";
-import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
-import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
-import { GeneralTypes } from "@/src/types";
-import { toast } from "sonner";
-import ShoppingCart from "@/src/components/auction/ShoppingCart";
 import AuctionInfo from "@/src/components/auction/AuctionInfo";
-import RoundInfo from "@/src/components/auction/RoundInfo";
 import BidActivity from "@/src/components/auction/BidActivity";
 import BidChart from "@/src/components/auction/BidChart";
 import BlindBidCart from "@/src/components/auction/BlindBidCart";
+import RoundInfo from "@/src/components/auction/RoundInfo";
+import ShoppingCart from "@/src/components/auction/ShoppingCart";
+import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
+import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
+import { chartData, charterFactoryContractAddress } from "@/src/libs/constants";
+import { GeneralTypes } from "@/src/types";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "sonner";
+import { Abi, formatEther } from "viem";
+import {
+  useAccount,
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWatchContractEvent,
+  useWriteContract,
+} from "wagmi";
 
 export default function AuctionByIdPage() {
   const params = useParams();
@@ -329,14 +325,15 @@ export default function AuctionByIdPage() {
           <BidActivity
             handleBidPosition={handleBidPosition}
             auctionAddress={auctionAddress as `0x${string}`}
+            usdtDecimals={usdtDecimals as bigint}
           />
         </div>
 
         <div className="w-full md:w-[40%]">
           <BidChart
             chartData={chartData}
-            graphbarData={graphbarData}
-            targetPrice={"0.00"}
+            auctionAddress={auctionAddress as `0x${string}`}
+            usdtDecimals={usdtDecimals as bigint}
           />
         </div>
 

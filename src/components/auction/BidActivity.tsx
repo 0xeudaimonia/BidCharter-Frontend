@@ -1,5 +1,4 @@
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
-import { ERC20ABI } from "@/src/libs/abi/ERC20";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { formattedWithCurrency } from "@/src/utils/utils";
 import { useEffect, useMemo, useState } from "react";
@@ -10,38 +9,17 @@ import { useReadContract, useReadContracts } from "wagmi";
 interface BidActivityProps {
   handleBidPosition: (index: number) => void;
   auctionAddress: `0x${string}`;
+  usdtDecimals: bigint;
 }
 
 const BidActivity = ({
   handleBidPosition,
   auctionAddress,
+  usdtDecimals,
 }: BidActivityProps) => {
   const [roundPositions, setRoundPositions] = useState<
     CharterAuctionTypes.Position[]
   >([]);
-  const {
-    data: usdtAddress,
-    error: usdtAddressError,
-    // isLoading: isNftAddressLoading,
-    // refetch: refetchNftAddress,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "usdt",
-    // Error handling moved to useEffect
-  }) as GeneralTypes.ReadContractTypes;
-
-  const {
-    data: usdtDecimals,
-    error: usdtDecimalsError,
-    // isLoading: isNftAddressLoading,
-    // refetch: refetchNftAddress,
-  } = useReadContract({
-    address: usdtAddress as `0x${string}`,
-    abi: ERC20ABI as Abi,
-    functionName: "decimals",
-    // Error handling moved to useEffect
-  }) as GeneralTypes.ReadContractTypes;
 
   const {
     data: currentRound,
@@ -81,11 +59,11 @@ const BidActivity = ({
   const { data: roundPositionBidPrice, error: roundPositionBidPriceError } =
     useReadContracts({
       contracts: positionContracts,
-    }) as CharterAuctionTypes.FetchRoundPositionBidPrice;
+    }) as CharterAuctionTypes.FetchRoundBidData;
 
   useEffect(() => {
     if (!roundPositionBidPrice) return;
-    console.log(usdtDecimals);
+
     setRoundPositions(
       roundPositionBidPrice
         .filter((bidPrice) => bidPrice.status === "success")
@@ -116,24 +94,7 @@ const BidActivity = ({
         id: "roundPositionBidPriceLoading",
       });
     }
-    if (usdtAddressError) {
-      toast.error("Failed to fetch USDT address.", {
-        id: "usdtAddressLoading",
-      });
-    }
-
-    if (usdtDecimalsError) {
-      toast.error("Failed to fetch USDT decimals.", {
-        id: "usdtDecimalsLoading",
-      });
-    }
-  }, [
-    currentRoundError,
-    roundPositionsCountError,
-    roundPositionBidPriceError,
-    usdtAddressError,
-    usdtDecimalsError,
-  ]);
+  }, [currentRoundError, roundPositionsCountError, roundPositionBidPriceError]);
   return (
     <div>
       <h3 className="text-sm text-white font-bold px-5">
