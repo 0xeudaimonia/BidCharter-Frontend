@@ -39,7 +39,7 @@ export type Position = {
   price: string;
 };
 
-export type FetchRoundPositionBidPrice = {
+export type FetchRoundBidData = {
   data: {
     result: bigint;
     status: string
