@@ -81,15 +81,15 @@ export const graphbarData: CharterAuctionTypes.GraphbarItem[] = [
 ];
 
 export const bidPositions: CharterAuctionTypes.Position[] = [
-  { seat: "001", price: "$13,579.15" },
-  { seat: "002", price: "$12,997.58" },
-  { seat: "004", price: "$12,997.58" },
-  { seat: "005", price: "$12,997.58" },
-  { seat: "006", price: "$12,997.58" },
-  { seat: "007", price: "$12,997.58" },
-  { seat: "008", price: "$12,997.58" },
-  { seat: "009", price: "$12,997.58" },
-  { seat: "010", price: "$12,997.58" },
-  { seat: "011", price: "$12,997.58" },
-  { seat: "012", price: "$12,997.58" },
+  { seat: "001", price: "$13,579.15", index: 0 },
+  { seat: "002", price: "$12,997.58", index: 1 },
+  { seat: "004", price: "$12,997.58", index: 2 },
+  { seat: "005", price: "$12,997.58", index: 3 },
+  { seat: "006", price: "$12,997.58", index: 4 },
+  { seat: "007", price: "$12,997.58", index: 5 },
+  { seat: "008", price: "$12,997.58", index: 6 },
+  { seat: "009", price: "$12,997.58", index: 7 },
+  { seat: "010", price: "$12,997.58", index: 9 },
+  { seat: "011", price: "$12,997.58", index: 10 },
+  { seat: "012", price: "$12,997.58", index: 11 },
 ];
