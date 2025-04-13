@@ -9,11 +9,11 @@ import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
 import { chartData, charterFactoryContractAddress } from "@/src/libs/constants";
-import { GeneralTypes } from "@/src/types";
+import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Abi, formatEther } from "viem";
 import {
@@ -38,6 +38,11 @@ export default function AuctionByIdPage() {
     isSuccess: isTxSuccess,
     isError: isTxError,
   } = useWaitForTransactionReceipt({ hash: writeTxHash });
+
+  // Shopping Cart
+  const [shoppingCart, setShoppingCart] = useState<
+    CharterAuctionTypes.Position[]
+  >([]);
 
   useEffect(() => {
     if (isTxLoading) {
@@ -183,19 +188,81 @@ export default function AuctionByIdPage() {
     auctionTime: "03:11:28",
   };
 
-  const handleBidPosition = (positionIndex: number) => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "bidPosition",
-      args: [BigInt(positionIndex)],
-    });
+  const addToShoppingCart = (bidItem: CharterAuctionTypes.Position) => {
+    // Check if the item is already in the shopping cart
+    const isAlreadyInCart = shoppingCart.some(
+      (item) => item.seat === bidItem.seat
+    );
+
+    if (isAlreadyInCart) {
+      toast.warning("This item is already in your shopping cart.");
+      return;
+    }
+
+    setShoppingCart((prev) => [...prev, bidItem]);
+    toast.success("Added to shopping cart.");
+  };
+
+  const handleBidPosition = () => {
+    if (shoppingCart.length === 0) {
+      toast.warning("Please select at least one position.");
+      return;
+    }
+    if (shoppingCart.length === 1) {
+      writeContract(
+        {
+          address: auctionAddress as `0x${string}`,
+          abi: CharterAuctionABI as Abi,
+          functionName: "bidPosition",
+          args: [BigInt(shoppingCart[0].index)],
+        },
+        {
+          onSuccess: () => {
+            toast.success("Position bid successfully.");
+            setShoppingCart([]);
+          },
+          onError: () => {
+            toast.error("Failed to bid position.");
+          },
+        }
+      );
+    }
+    if (shoppingCart.length > 1) {
+      writeContract(
+        {
+          address: auctionAddress as `0x${string}`,
+          abi: CharterAuctionABI as Abi,
+          functionName: "bidPositions",
+          args: [shoppingCart.map((item) => BigInt(item.index))],
+        },
+        {
+          onSuccess: () => {
+            toast.success("Positions bid successfully.");
+            setShoppingCart([]);
+          },
+          onError: () => {
+            toast.error("Failed to bid positions.");
+          },
+        }
+      );
+    }
   };
 
   useWatchContractEvent({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     eventName: "BidPosition",
+    onLogs: (logs) => {
+      console.log("BidPosition event:", logs);
+      // refetchCurrentRound?.();
+      // refetchPositions?.();
+    },
+  });
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "BidPositions",
     onLogs: (logs) => {
       console.log("BidPosition event:", logs);
       // refetchCurrentRound?.();
@@ -311,7 +378,10 @@ export default function AuctionByIdPage() {
             }}
             entryFee={entryFee as bigint}
           />
-          <ShoppingCart />
+          <ShoppingCart
+            shoppingCart={shoppingCart}
+            handleBidPosition={handleBidPosition}
+          />
           <BlindBidCart
             auctionAddress={auctionAddress as `0x${string}`}
             usdt={{
@@ -323,9 +393,9 @@ export default function AuctionByIdPage() {
         </div>
         <div className="w-full md:w-[20%]">
           <BidActivity
-            handleBidPosition={handleBidPosition}
             auctionAddress={auctionAddress as `0x${string}`}
             usdtDecimals={usdtDecimals as bigint}
+            addToShoppingCart={addToShoppingCart}
           />
         </div>
 
