@@ -7,15 +7,15 @@ import { Abi, formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 
 interface BidActivityProps {
-  handleBidPosition: (index: number) => void;
   auctionAddress: `0x${string}`;
   usdtDecimals: bigint;
+  addToShoppingCart: (bidItem: CharterAuctionTypes.Position) => void;
 }
 
 const BidActivity = ({
-  handleBidPosition,
   auctionAddress,
   usdtDecimals,
+  addToShoppingCart,
 }: BidActivityProps) => {
   const [roundPositions, setRoundPositions] = useState<
     CharterAuctionTypes.Position[]
@@ -68,10 +68,11 @@ const BidActivity = ({
       roundPositionBidPrice
         .filter((bidPrice) => bidPrice.status === "success")
         .map((bidPrice, index) => ({
-          seat: (index + 1).toString(),
+          seat: (index + 1).toString().padStart(3, "0"),
           price: formattedWithCurrency(
             Number(formatUnits(bidPrice.result, Number(usdtDecimals)))
           ),
+          index: index,
         }))
     );
   }, [roundPositionBidPrice, usdtDecimals]);
@@ -118,7 +119,7 @@ const BidActivity = ({
                 </div>
                 <div
                   className="text-xs text-[#D9D9D9] font-normal cursor-pointer underline"
-                  onClick={() => handleBidPosition(index)}
+                  onClick={() => addToShoppingCart(pos)}
                 >
                   Merge
                 </div>

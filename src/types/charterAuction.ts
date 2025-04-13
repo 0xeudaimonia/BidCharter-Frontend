@@ -37,6 +37,7 @@ export type BarData = {
 export type Position = {
   seat: string;
   price: string;
+  index: number;
 };
 
 export type FetchRoundBidData = {
