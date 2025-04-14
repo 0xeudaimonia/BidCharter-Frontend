@@ -5,11 +5,10 @@ import { useEffect } from "react";
 import { toast } from "sonner";
 import { Abi } from "viem";
 import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
-import InfoRow from "./InfoRow";
+// import InfoRow from "./InfoRow";
 
 interface IProps {
   shoppingCart: CharterAuctionTypes.Position[];
-  handleBidPosition: () => void;
   handleRemovePosition: (position: CharterAuctionTypes.Position) => void;
   auctionAddress: `0x${string}`;
   usdt: GeneralTypes.Usdt;
@@ -21,7 +20,6 @@ export default function ShoppingCart({
   auctionAddress,
   usdt,
   entryFee,
-  handleBidPosition,
   handleRemovePosition,
 }: IProps) {
   const { data: writeTxHash, writeContract } = useWriteContract();
@@ -52,6 +50,49 @@ export default function ShoppingCart({
         },
       }
     );
+  };
+
+  const handleBidPosition = () => {
+    if (shoppingCart.length === 0) {
+      toast.warning("Please select at least one position.");
+      return;
+    }
+    if (shoppingCart.length === 1) {
+      writeContract(
+        {
+          address: auctionAddress as `0x${string}`,
+          abi: CharterAuctionABI as Abi,
+          functionName: "bidPosition",
+          args: [BigInt(shoppingCart[0].index)],
+        },
+        {
+          // onSuccess: () => {
+          //   toast.success("Position bid successfully.");
+          // },
+          onError: () => {
+            toast.error("Failed to bid position.");
+          },
+        }
+      );
+    }
+    if (shoppingCart.length > 1) {
+      writeContract(
+        {
+          address: auctionAddress as `0x${string}`,
+          abi: CharterAuctionABI as Abi,
+          functionName: "bidPositions",
+          args: [shoppingCart.map((item) => BigInt(item.index))],
+        },
+        {
+          // onSuccess: () => {
+          //   // toast.success("Positions bid successfully.");
+          // },
+          onError: () => {
+            toast.error("Failed to bid positions.");
+          },
+        }
+      );
+    }
   };
 
   const handleEndRound = () => {
@@ -108,7 +149,7 @@ export default function ShoppingCart({
         </div>
       </div>
 
-      <InfoRow label="My New Position:" value="$12,521.00" />
+      {/* <InfoRow label="My New Position:" value="$12,521.00" /> */}
 
       <div className="text-center flex items-center gap-3 flex-wrap mt-5">
         <button

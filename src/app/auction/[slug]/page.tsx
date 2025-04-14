@@ -1,4 +1,17 @@
 "use client";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
+import { Abi } from "viem";
+import {
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWatchContractEvent,
+  useWriteContract,
+} from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 import AuctionInfo from "@/src/components/auction/AuctionInfo";
 import BidActivity from "@/src/components/auction/BidActivity";
 import BidChart from "@/src/components/auction/BidChart";
@@ -13,25 +26,19 @@ import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
 import { chartData, charterFactoryContractAddress } from "@/src/libs/constants";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Abi } from "viem";
-import {
-  useReadContract,
-  useWaitForTransactionReceipt,
-  useWatchContractEvent,
-  useWriteContract,
-} from "wagmi";
+
+interface RoundInfoRef extends HTMLDivElement {
+  refreshRoundInfo: () => void;
+}
 
 export default function AuctionByIdPage() {
   const params = useParams();
   const { slug } = params;
   const auctionId = Number(slug) + 1;
 
-  const { data: writeTxHash, writeContract } = useWriteContract();
+  const roundInfoRef = useRef<RoundInfoRef>(null);
+
+  const { data: writeTxHash } = useWriteContract();
 
   const {
     isLoading: isTxLoading,
@@ -50,6 +57,7 @@ export default function AuctionByIdPage() {
     }
 
     if (isTxSuccess) {
+      roundInfoRef.current?.refreshRoundInfo();
       toast.success("Transaction was successful!", {
         id: "transactionLoading",
       });
@@ -70,6 +78,17 @@ export default function AuctionByIdPage() {
     abi: CharterFactoryABI,
     functionName: "getAuctionAddress",
     args: [BigInt(auctionId)],
+  }) as GeneralTypes.ReadContractTypes;
+
+  const {
+    data: currentRound,
+    error: currentRoundError,
+    // isLoading: isCurrentRoundLoading,
+    // refetch: refetchCurrentRound,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "currentRound",
   }) as GeneralTypes.ReadContractTypes;
 
   const {
@@ -163,51 +182,6 @@ export default function AuctionByIdPage() {
     toast.success("Added to shopping cart.");
   };
 
-  const handleBidPosition = () => {
-    if (shoppingCart.length === 0) {
-      toast.warning("Please select at least one position.");
-      return;
-    }
-    if (shoppingCart.length === 1) {
-      writeContract(
-        {
-          address: auctionAddress as `0x${string}`,
-          abi: CharterAuctionABI as Abi,
-          functionName: "bidPosition",
-          args: [BigInt(shoppingCart[0].index)],
-        },
-        {
-          onSuccess: () => {
-            toast.success("Position bid successfully.");
-            setShoppingCart([]);
-          },
-          onError: () => {
-            toast.error("Failed to bid position.");
-          },
-        }
-      );
-    }
-    if (shoppingCart.length > 1) {
-      writeContract(
-        {
-          address: auctionAddress as `0x${string}`,
-          abi: CharterAuctionABI as Abi,
-          functionName: "bidPositions",
-          args: [shoppingCart.map((item) => BigInt(item.index))],
-        },
-        {
-          onSuccess: () => {
-            toast.success("Positions bid successfully.");
-            setShoppingCart([]);
-          },
-          onError: () => {
-            toast.error("Failed to bid positions.");
-          },
-        }
-      );
-    }
-  };
-
   const handleRemovePosition = (position: CharterAuctionTypes.Position) => {
     setShoppingCart((prev) =>
       prev.filter((item) => item.index !== position.index)
@@ -273,7 +247,12 @@ export default function AuctionByIdPage() {
         id: "isBlindRoundEndedLoading",
       });
     }
-  }, [isBlindRoundEndedError]);
+    if (currentRoundError) {
+      toast.error("Failed to fetch current round.", {
+        id: "currentRoundLoading",
+      });
+    }
+  }, [isBlindRoundEndedError, currentRoundError]);
 
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
@@ -293,6 +272,8 @@ export default function AuctionByIdPage() {
           </Link>
         </div>
         <RoundInfo
+          ref={roundInfoRef}
+          currentRound={currentRound as bigint}
           auctionAddress={auctionAddress as `0x${string}`}
           usdtDecimals={usdtDecimals as bigint}
           usdtAddress={usdtAddress as `0x${string}`}
@@ -318,7 +299,6 @@ export default function AuctionByIdPage() {
           {isBlindRoundEnded && (
             <ShoppingCart
               shoppingCart={shoppingCart}
-              handleBidPosition={handleBidPosition}
               handleRemovePosition={handleRemovePosition}
               auctionAddress={auctionAddress as `0x${string}`}
               usdt={{
@@ -342,6 +322,7 @@ export default function AuctionByIdPage() {
         <div className="w-full md:w-[20%]">
           <BidActivity
             usdtDecimals={usdtDecimals as bigint}
+            currentRound={currentRound as bigint}
             addToShoppingCart={addToShoppingCart}
             auctionAddress={auctionAddress as `0x${string}`}
           />

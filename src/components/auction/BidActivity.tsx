@@ -8,29 +8,20 @@ import { useReadContract, useReadContracts } from "wagmi";
 
 interface BidActivityProps {
   usdtDecimals: bigint;
+  currentRound: bigint;
   auctionAddress: `0x${string}`;
   addToShoppingCart: (bidItem: CharterAuctionTypes.Position) => void;
 }
 
 const BidActivity = ({
   usdtDecimals,
+  currentRound,
   auctionAddress,
   addToShoppingCart,
 }: BidActivityProps) => {
   const [roundPositions, setRoundPositions] = useState<
     CharterAuctionTypes.Position[]
   >([]);
-
-  const {
-    data: currentRound,
-    error: currentRoundError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "currentRound",
-  }) as GeneralTypes.ReadContractTypes;
 
   const {
     data: roundPositionsCount,
@@ -84,18 +75,12 @@ const BidActivity = ({
       });
     }
 
-    if (currentRoundError) {
-      toast.error("Failed to fetch current round.", {
-        id: "currentRoundLoading",
-      });
-    }
-
     if (roundPositionsCountError) {
       toast.error("Failed to fetch round positions count.", {
         id: "roundPositionsCountLoading",
       });
     }
-  }, [roundPositionBidPriceError, currentRoundError, roundPositionsCountError]);
+  }, [roundPositionBidPriceError, roundPositionsCountError]);
 
   return (
     <div>
