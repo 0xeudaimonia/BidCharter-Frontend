@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, forwardRef } from "react";
 import { toast } from "sonner";
 import {
   useAccount,
@@ -15,15 +15,20 @@ import { ERC20ABI } from "@/src/libs/abi/ERC20";
 
 interface RoundInfoProps {
   auctionAddress: `0x${string}`;
+  currentRound: bigint;
   usdtDecimals: bigint;
   usdtAddress: `0x${string}`;
 }
 
-const RoundInfo = ({
-  auctionAddress,
-  usdtDecimals,
-  usdtAddress,
-}: RoundInfoProps) => {
+const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
+  ({
+    auctionAddress,
+    currentRound,
+    usdtDecimals,
+    usdtAddress,
+  }: RoundInfoProps,
+  ref
+) => {
   const { address } = useAccount();
 
   const [roundInfo, setRoundInfo] = useState<
@@ -47,14 +52,18 @@ const RoundInfo = ({
     data: isBlindRoundEnded,
     error: isBlindRoundEndedError,
     // isLoading: isBlindRoundEndedLoading,
-    // refetch: refetchIsBlindRoundEnded,
+    refetch: refetchIsBlindRoundEnded,
   } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "isBlindRoundEnded",
   }) as GeneralTypes.ReadContractTypes;
 
-  const { data: stakedFunds, error: stakedFundsError } = useReadContract({
+  const { 
+    data: stakedFunds, 
+    error: stakedFundsError,
+    refetch: refetchStakedFunds
+  } = useReadContract({
     address: usdtAddress as `0x${string}`,
     abi: ERC20ABI as Abi,
     functionName: "balanceOf",
@@ -63,21 +72,10 @@ const RoundInfo = ({
   }) as GeneralTypes.ReadContractTypes;
 
   const {
-    data: currentRound,
-    error: currentRoundError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "currentRound",
-  }) as GeneralTypes.ReadContractTypes;
-
-  const {
     data: targetPrice,
     error: targetPriceError,
     // isLoading: isTargetPriceLoading,
-    // refetch: refetchTargetPrice,
+    refetch: refetchTargetPrice,
   } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -91,7 +89,7 @@ const RoundInfo = ({
     data: getRoundBiddersCount,
     error: getRoundBiddersCountError,
     // isLoading: isRoundBidderLoading,
-    // refetch: refetchRoundBidder,
+    refetch: refetchRoundBidder,
   } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -102,7 +100,7 @@ const RoundInfo = ({
     data: winner,
     error: winnerError,
     // isLoading: isWinnerLoading,
-    // refetch: refetchWinner,
+    refetch: refetchWinner,
   } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -126,27 +124,34 @@ const RoundInfo = ({
   const {
     data: rounderBidderContractsData,
     error: rounderBidderContractsError,
+    refetch: refetchRounderBidderContracts,
   } = useReadContracts({
     contracts: rounderBidderContracts,
   });
 
-  const { data: myBidderIndexData, error: myBidderIndexError } =
-    useReadContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "getRoundBidderBidPricesCount",
-      args: [
+  const {
+    data: myBidderIndexData,
+    error: myBidderIndexError,
+    refetch: refetchMyBidderIndex,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "getRoundBidderBidPricesCount",
+    args: [
         currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
         myBidderIndex !== undefined ? BigInt(myBidderIndex) : undefined,
       ],
     }) as GeneralTypes.ReadContractTypes;
 
-  const { data: rounderBidderBidPrice, error: rounderBidderBidPriceError } =
-    useReadContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "getRoundBidderBidPrice",
-      args: [
+  const {
+    data: rounderBidderBidPrice,
+    error: rounderBidderBidPriceError,
+    refetch: refetchRounderBidderBidPrice,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "getRoundBidderBidPrice",
+    args: [
         currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
         myBidderIndex !== undefined ? BigInt(myBidderIndex) : undefined,
         myLatestBidPosition !== undefined
@@ -171,12 +176,6 @@ const RoundInfo = ({
   }, [myBidderIndexData]);
 
   useEffect(() => {
-    if (currentRoundError) {
-      toast.error("Failed to fetch current round.", {
-        id: "currentRoundLoading",
-      });
-    }
-
     if (targetPriceError) {
       toast.error("Failed to fetch target price.", {
         id: "targetPriceLoading",
@@ -219,7 +218,6 @@ const RoundInfo = ({
       });
     }
   }, [
-    currentRoundError,
     targetPriceError,
     isBlindRoundEndedError,
     getRoundBiddersCountError,
@@ -274,6 +272,24 @@ const RoundInfo = ({
     stakedFunds,
   ]);
 
+  const refreshRoundInfo = () => {
+    refetchIsBlindRoundEnded?.();
+    refetchStakedFunds?.();
+    refetchTargetPrice?.();
+    refetchRoundBidder?.();
+    refetchWinner?.();
+    refetchRounderBidderContracts?.();
+    refetchMyBidderIndex?.();
+    refetchRounderBidderBidPrice?.();
+  };
+
+  // Expose refreshRoundInfo through ref
+  useEffect(() => {
+    if (typeof ref === 'object' && ref?.current) {
+      ref.current.refreshRoundInfo = refreshRoundInfo;
+    }
+  }, [ref]);
+
   return (
     <div className="flex flex-wrap justify-center gap-6">
       {roundInfo.map((item, index) => (
@@ -284,6 +300,8 @@ const RoundInfo = ({
       ))}
     </div>
   );
-};
+});
+
+RoundInfo.displayName = 'RoundInfo';
 
 export default RoundInfo;

@@ -35,6 +35,7 @@ export default function ClaimCharterNFT({ auctionAddress }: IProps) {
   } = useWaitForTransactionReceipt({ hash: writeTxHash });
 
   const handleClaimNFT = () => {
+    // toast.loading("Claiming NFT...", { id: "claimNFTLoading" });
     writeContract({
       address: auctionAddress as `0x${string}`,
       abi: CharterAuctionABI as Abi,
