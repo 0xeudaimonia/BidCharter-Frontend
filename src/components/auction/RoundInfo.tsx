@@ -11,22 +11,18 @@ import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { formattedWithCurrency } from "@/src/utils/utils";
 import { Abi, formatUnits } from "viem";
+import { ERC20ABI } from "@/src/libs/abi/ERC20";
 
 interface RoundInfoProps {
   auctionAddress: `0x${string}`;
   usdtDecimals: bigint;
-  winner: `0x${string}`;
-  roundPositionBidPrice?: {
-    result: bigint;
-    status: string;
-  }[];
+  usdtAddress: `0x${string}`;
 }
 
 const RoundInfo = ({
   auctionAddress,
   usdtDecimals,
-  winner,
-  roundPositionBidPrice,
+  usdtAddress,
 }: RoundInfoProps) => {
   const { address } = useAccount();
 
@@ -36,8 +32,8 @@ const RoundInfo = ({
     { label: "Round:", value: "0" },
     { label: "My Position:", value: "0" },
     { label: "Target Price:", value: "0" },
-    { label: "Winner:", value: winner },
-    { label: "Stake Funds:", value: "0" },
+    { label: "Winner:", value: "" },
+    { label: "Staked Funds:", value: "0" },
   ]);
 
   const [myBidderIndex, setMyBidderIndex] = useState<number | undefined>(
@@ -46,14 +42,6 @@ const RoundInfo = ({
   const [myLatestBidPosition, setMyLatestBidPosition] = useState<
     number | undefined
   >(undefined);
-
-  const stakeFunds = useMemo(() => {
-    return formattedWithCurrency(
-      roundPositionBidPrice?.reduce((acc, curr) => {
-        return acc + Number(formatUnits(curr.result, Number(usdtDecimals)));
-      }, 0) || 0
-    );
-  }, [roundPositionBidPrice, usdtDecimals]);
 
   const {
     data: isBlindRoundEnded,
@@ -64,6 +52,14 @@ const RoundInfo = ({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "isBlindRoundEnded",
+  }) as GeneralTypes.ReadContractTypes;
+
+  const { data: stakedFunds, error: stakedFundsError } = useReadContract({
+    address: usdtAddress as `0x${string}`,
+    abi: ERC20ABI as Abi,
+    functionName: "balanceOf",
+    args: [auctionAddress as `0x${string}`],
+    // Error handling moved to useEffect
   }) as GeneralTypes.ReadContractTypes;
 
   const {
@@ -100,6 +96,17 @@ const RoundInfo = ({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "getRoundBiddersCount",
+  }) as GeneralTypes.ReadContractTypes;
+
+  const {
+    data: winner,
+    error: winnerError,
+    // isLoading: isWinnerLoading,
+    // refetch: refetchWinner,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "winner",
   }) as GeneralTypes.ReadContractTypes;
 
   const rounderBidderContracts = useMemo(() => {
@@ -199,6 +206,18 @@ const RoundInfo = ({
         id: "rounderBidderBidPriceLoading",
       });
     }
+
+    if (winnerError) {
+      toast.error("Failed to fetch winner.", {
+        id: "winnerLoading",
+      });
+    }
+
+    if (stakedFundsError) {
+      toast.error("Failed to fetch staked funds.", {
+        id: "stakedFundsLoading",
+      });
+    }
   }, [
     currentRoundError,
     targetPriceError,
@@ -207,6 +226,8 @@ const RoundInfo = ({
     rounderBidderContractsError,
     rounderBidderBidPriceError,
     myBidderIndexError,
+    winnerError,
+    stakedFundsError,
   ]);
 
   useEffect(() => {
@@ -229,12 +250,18 @@ const RoundInfo = ({
         : 0
     );
 
+    const stakedFundsValue = formattedWithCurrency(
+      stakedFunds
+        ? Number(formatUnits(stakedFunds as bigint, Number(usdtDecimals)))
+        : 0
+    );
+
     setRoundInfo([
       { label: "Round:", value: roundValue },
       { label: "Target Price:", value: targetPriceValue },
       { label: "My Position:", value: myPositionValue },
-      { label: "Winner:", value: winner },
-      { label: "Stake Funds:", value: stakeFunds.toString() },
+      { label: "Winner:", value: winner as `0x${string}` },
+      { label: "Staked Funds:", value: stakedFundsValue },
     ]);
   }, [
     isBlindRoundEnded,
@@ -244,7 +271,7 @@ const RoundInfo = ({
     usdtDecimals,
     rounderBidderBidPrice,
     winner,
-    stakeFunds,
+    stakedFunds,
   ]);
 
   return (

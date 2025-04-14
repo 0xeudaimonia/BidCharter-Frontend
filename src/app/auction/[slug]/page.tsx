@@ -3,6 +3,9 @@ import AuctionInfo from "@/src/components/auction/AuctionInfo";
 import BidActivity from "@/src/components/auction/BidActivity";
 import BidChart from "@/src/components/auction/BidChart";
 import BlindBidCart from "@/src/components/auction/BlindBidCart";
+import ClaimCharterNFT from "@/src/components/auction/ClaimCharterNFT";
+import ClaimReward from "@/src/components/auction/ClaimReward";
+import EndAuction from "@/src/components/auction/EndAuction";
 import RoundInfo from "@/src/components/auction/RoundInfo";
 import ShoppingCart from "@/src/components/auction/ShoppingCart";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
@@ -13,13 +16,11 @@ import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Abi, formatEther } from "viem";
+import { Abi } from "viem";
 import {
-  useAccount,
   useReadContract,
-  useReadContracts,
   useWaitForTransactionReceipt,
   useWatchContractEvent,
   useWriteContract,
@@ -29,8 +30,6 @@ export default function AuctionByIdPage() {
   const params = useParams();
   const { slug } = params;
   const auctionId = Number(slug) + 1;
-
-  const { address } = useAccount();
 
   const { data: writeTxHash, writeContract } = useWriteContract();
 
@@ -132,102 +131,11 @@ export default function AuctionByIdPage() {
     }
   }, [auctionAddressError, usdtAddressError, usdtDecimalsError, entryFeeError]);
 
-  const {
-    data: rewards,
-    error: rewardsError,
-    // isLoading: isRewardsLoading,
-    refetch: refetchRewards,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "rewards",
-    args: [address || "0x0"],
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    // if (isRewardsLoading) {
-    //   toast.loading("Fetching rewards...", { id: "rewardsLoading" });
-    // }
-
-    if (rewardsError) {
-      toast.error("Failed to fetch rewards.", { id: "rewardsLoading" });
-    }
-
-    // if (rewards) {
-    //   toast.success("Rewards fetched successfully!", { id: "rewardsLoading" });
-    // }
-  }, [rewardsError]);
-
-  const {
-    data: winner,
-    error: winnerError,
-    // isLoading: isWinnerLoading,
-    // refetch: refetchWinner,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "winner",
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    if (winnerError) {
-      toast.error("Failed to fetch winner.", { id: "winnerLoading" });
-    }
-
-    // if (winner) {
-    //   toast.success("Winner fetched successfully!", { id: "winnerLoading" });
-    // }
-
-    // if (isWinnerLoading) {
-    //   toast.loading("Fetching winner...", { id: "winnerLoading" });
-    // }
-  }, [winnerError]);
-
   // Auction info derived from contract data
   const auctionInfo = {
     title: `BidCharter Auction #${auctionId}`,
     auctionTime: "03:11:28",
   };
-
-  const {
-    data: currentRound,
-    error: currentRoundError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "currentRound",
-  }) as GeneralTypes.ReadContractTypes;
-
-  const {
-    data: roundPositionsCount,
-    error: roundPositionsCountError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "getRoundPositionsCount",
-    args: [currentRound],
-  }) as GeneralTypes.ReadContractTypes;
-
-  const positionContracts = useMemo(() => {
-    if (!roundPositionsCount) return [];
-    return [...Array(Number(roundPositionsCount)).keys()].map(
-      (positionIndex) => ({
-        address: auctionAddress as `0x${string}`,
-        abi: CharterAuctionABI as Abi,
-        functionName: "getRoundPositionBidPrice",
-        args: [currentRound, positionIndex] as const,
-      })
-    );
-  }, [roundPositionsCount, currentRound, auctionAddress]);
-
-  const { data: roundPositionBidPrice, error: roundPositionBidPriceError } =
-    useReadContracts({
-      contracts: positionContracts,
-    }) as CharterAuctionTypes.FetchRoundBidData;
 
   const {
     data: isBlindRoundEnded,
@@ -329,33 +237,6 @@ export default function AuctionByIdPage() {
     },
   });
 
-  const handleClaimRewards = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "withdrawRewards",
-    });
-    toast.success("Rewards claimed successfully.");
-  };
-
-  useWatchContractEvent({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    eventName: "RewardsWithdrawn",
-    onLogs: (logs) => {
-      console.log("RewardsWithdrawn event:", logs);
-      refetchRewards?.();
-    },
-  });
-
-  const handleClaimNFT = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "withdrawNFT",
-    });
-  };
-
   useWatchContractEvent({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -365,14 +246,6 @@ export default function AuctionByIdPage() {
       // refetchNftAddress?.();
     },
   });
-
-  const handleEndAuction = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "endAuction",
-    });
-  };
 
   useWatchContractEvent({
     address: auctionAddress as `0x${string}`,
@@ -395,35 +268,12 @@ export default function AuctionByIdPage() {
 
   // Error handling of BidActivity
   useEffect(() => {
-    if (roundPositionBidPriceError) {
-      toast.error("Failed to fetch round position bid price.", {
-        id: "roundPositionBidPriceLoading",
-      });
-    }
-
-    if (currentRoundError) {
-      toast.error("Failed to fetch current round.", {
-        id: "currentRoundLoading",
-      });
-    }
-
-    if (roundPositionsCountError) {
-      toast.error("Failed to fetch round positions count.", {
-        id: "roundPositionsCountLoading",
-      });
-    }
-
     if (isBlindRoundEndedError) {
       toast.error("Failed to fetch blind round ended.", {
         id: "isBlindRoundEndedLoading",
       });
     }
-  }, [
-    roundPositionBidPriceError,
-    currentRoundError,
-    roundPositionsCountError,
-    isBlindRoundEndedError,
-  ]);
+  }, [isBlindRoundEndedError]);
 
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
@@ -445,8 +295,7 @@ export default function AuctionByIdPage() {
         <RoundInfo
           auctionAddress={auctionAddress as `0x${string}`}
           usdtDecimals={usdtDecimals as bigint}
-          winner={winner as `0x${string}`}
-          roundPositionBidPrice={roundPositionBidPrice}
+          usdtAddress={usdtAddress as `0x${string}`}
         />
 
         <div className="sm:w-auto w-full">
@@ -492,9 +341,9 @@ export default function AuctionByIdPage() {
         </div>
         <div className="w-full md:w-[20%]">
           <BidActivity
-            roundPositionBidPrice={roundPositionBidPrice}
             usdtDecimals={usdtDecimals as bigint}
             addToShoppingCart={addToShoppingCart}
+            auctionAddress={auctionAddress as `0x${string}`}
           />
         </div>
 
@@ -505,52 +354,11 @@ export default function AuctionByIdPage() {
             usdtDecimals={usdtDecimals as bigint}
           />
         </div>
-
         <div className="w-full md:w-[20%] flex flex-col justify-items-end sm:gap-[30%]">
-          <div className="w-full">
-            <h3 className="text-sm text-white font-bold">My Rewards</h3>
-            <div className="border border-[#D9D9D940] rounded-2xl p-4 mt-5">
-              <div className="flex gap-3">
-                <span className="text-xs text-[#D9D9D9] font-normal">
-                  Total:
-                </span>
-                <span className="text-xs text-[#0CB400] font-bold">
-                  {rewards
-                    ? `$${
-                        rewards
-                          ? Number(formatEther(rewards as bigint)).toFixed(2)
-                          : "0.00"
-                      }`
-                    : "$0.00"}
-                </span>
-              </div>
-            </div>
-            <div className="sm:text-end mt-3 sm:mb-0 mb-3">
-              <button
-                className="cursor-pointer mx-auto sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
-                onClick={handleClaimRewards}
-                disabled={isTxLoading}
-              >
-                {isTxLoading ? "Claiming..." : "Claim Rewards"}
-              </button>
-            </div>
-          </div>
-
+          <ClaimReward auctionAddress={auctionAddress as `0x${string}`} />
           <div className="text-end flex flex-col sm:w-auto w-full">
-            <button
-              className="cursor-pointer sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
-              onClick={handleClaimNFT}
-              disabled={isTxLoading || winner !== address}
-            >
-              {isTxLoading ? "Claiming..." : "Claim Charter NFT"}
-            </button>
-            <button
-              className="cursor-pointer hover:bg-white transition mt-2 sm:w-auto w-full text-sm font-bold text-black bg-[#979797] rounded-[10px] px-5 py-3"
-              onClick={handleEndAuction}
-              disabled={isTxLoading}
-            >
-              {isTxLoading ? "Ending..." : "End Auction"}
-            </button>
+            <ClaimCharterNFT auctionAddress={auctionAddress as `0x${string}`} />
+            <EndAuction auctionAddress={auctionAddress as `0x${string}`} />
           </div>
         </div>
       </div>
