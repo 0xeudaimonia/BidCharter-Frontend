@@ -1,65 +1,25 @@
-import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
-import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
+import { CharterAuctionTypes } from "@/src/types";
 import { formattedWithCurrency } from "@/src/utils/utils";
-import { useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { Abi, formatUnits } from "viem";
-import { useReadContract, useReadContracts } from "wagmi";
+import { useEffect, useState } from "react";
+import { formatUnits } from "viem";
 
 interface BidActivityProps {
-  auctionAddress: `0x${string}`;
+  roundPositionBidPrice: {
+    result: bigint;
+    status: string;
+  }[];
   usdtDecimals: bigint;
   addToShoppingCart: (bidItem: CharterAuctionTypes.Position) => void;
 }
 
 const BidActivity = ({
-  auctionAddress,
+  roundPositionBidPrice,
   usdtDecimals,
   addToShoppingCart,
 }: BidActivityProps) => {
   const [roundPositions, setRoundPositions] = useState<
     CharterAuctionTypes.Position[]
   >([]);
-
-  const {
-    data: currentRound,
-    error: currentRoundError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "currentRound",
-  }) as GeneralTypes.ReadContractTypes;
-
-  const {
-    data: roundPositionsCount,
-    error: roundPositionsCountError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "getRoundPositionsCount",
-    args: [currentRound],
-  }) as GeneralTypes.ReadContractTypes;
-
-  const positionContracts = useMemo(() => {
-    if (!roundPositionsCount) return [];
-    return [...Array(Number(roundPositionsCount)).keys()].map(
-      (positionIndex) => ({
-        address: auctionAddress,
-        abi: CharterAuctionABI as Abi,
-        functionName: "getRoundPositionBidPrice",
-        args: [currentRound, positionIndex] as const,
-      })
-    );
-  }, [roundPositionsCount, currentRound, auctionAddress]);
-
-  const { data: roundPositionBidPrice, error: roundPositionBidPriceError } =
-    useReadContracts({
-      contracts: positionContracts,
-    }) as CharterAuctionTypes.FetchRoundBidData;
 
   useEffect(() => {
     if (!roundPositionBidPrice) return;
@@ -68,7 +28,7 @@ const BidActivity = ({
       roundPositionBidPrice
         .filter((bidPrice) => bidPrice.status === "success")
         .map((bidPrice, index) => ({
-          seat: (index).toString().padStart(3, "0"),
+          seat: index.toString().padStart(3, "0"),
           price: formattedWithCurrency(
             Number(formatUnits(bidPrice.result, Number(usdtDecimals)))
           ),
@@ -77,25 +37,6 @@ const BidActivity = ({
     );
   }, [roundPositionBidPrice, usdtDecimals]);
 
-  useEffect(() => {
-    if (currentRoundError) {
-      toast.error("Failed to fetch current round.", {
-        id: "currentRoundLoading",
-      });
-    }
-
-    if (roundPositionsCountError) {
-      toast.error("Failed to fetch round positions count.", {
-        id: "roundPositionsCountLoading",
-      });
-    }
-
-    if (roundPositionBidPriceError) {
-      toast.error("Failed to fetch round position bid price.", {
-        id: "roundPositionBidPriceLoading",
-      });
-    }
-  }, [currentRoundError, roundPositionsCountError, roundPositionBidPriceError]);
   return (
     <div>
       <h3 className="text-sm text-white font-bold px-5">

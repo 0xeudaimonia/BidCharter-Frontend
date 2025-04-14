@@ -13,12 +13,13 @@ import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Abi, formatEther } from "viem";
 import {
   useAccount,
   useReadContract,
+  useReadContracts,
   useWaitForTransactionReceipt,
   useWatchContractEvent,
   useWriteContract,
@@ -188,6 +189,46 @@ export default function AuctionByIdPage() {
     auctionTime: "03:11:28",
   };
 
+  const {
+    data: currentRound,
+    error: currentRoundError,
+    // isLoading: isCurrentRoundLoading,
+    // refetch: refetchCurrentRound,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "currentRound",
+  }) as GeneralTypes.ReadContractTypes;
+
+  const {
+    data: roundPositionsCount,
+    error: roundPositionsCountError,
+    // isLoading: isCurrentRoundLoading,
+    // refetch: refetchCurrentRound,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "getRoundPositionsCount",
+    args: [currentRound],
+  }) as GeneralTypes.ReadContractTypes;
+
+  const positionContracts = useMemo(() => {
+    if (!roundPositionsCount) return [];
+    return [...Array(Number(roundPositionsCount)).keys()].map(
+      (positionIndex) => ({
+        address: auctionAddress as `0x${string}`,
+        abi: CharterAuctionABI as Abi,
+        functionName: "getRoundPositionBidPrice",
+        args: [currentRound, positionIndex] as const,
+      })
+    );
+  }, [roundPositionsCount, currentRound, auctionAddress]);
+
+  const { data: roundPositionBidPrice, error: roundPositionBidPriceError } =
+    useReadContracts({
+      contracts: positionContracts,
+    }) as CharterAuctionTypes.FetchRoundBidData;
+
   const addToShoppingCart = (bidItem: CharterAuctionTypes.Position) => {
     // Check if the item is already in the shopping cart
     const isAlreadyInCart = shoppingCart.some(
@@ -349,6 +390,27 @@ export default function AuctionByIdPage() {
   //   );
   // }
 
+  // Error handling of BidActivity
+  useEffect(() => {
+    if (roundPositionBidPriceError) {
+      toast.error("Failed to fetch round position bid price.", {
+        id: "roundPositionBidPriceLoading",
+      });
+    }
+
+    if (currentRoundError) {
+      toast.error("Failed to fetch current round.", {
+        id: "currentRoundLoading",
+      });
+    }
+
+    if (roundPositionsCountError) {
+      toast.error("Failed to fetch round positions count.", {
+        id: "roundPositionsCountLoading",
+      });
+    }
+  }, [roundPositionBidPriceError, currentRoundError, roundPositionsCountError]);
+
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
       <header className="flex flex-col md:flex-row justify-between">
@@ -366,7 +428,12 @@ export default function AuctionByIdPage() {
             </p>
           </Link>
         </div>
-        <RoundInfo auctionAddress={auctionAddress as `0x${string}`} />
+        <RoundInfo
+          auctionAddress={auctionAddress as `0x${string}`}
+          usdtDecimals={usdtDecimals as bigint}
+          winner={winner as `0x${string}`}
+          roundPositionBidPrice={roundPositionBidPrice}
+        />
 
         <div className="sm:w-auto w-full">
           <button className="cursor-pointer sm:w-auto w-full bg-[#204119] text-sm text-[#CAFFDB] py-5 px-10">
@@ -407,7 +474,7 @@ export default function AuctionByIdPage() {
         </div>
         <div className="w-full md:w-[20%]">
           <BidActivity
-            auctionAddress={auctionAddress as `0x${string}`}
+            roundPositionBidPrice={roundPositionBidPrice}
             usdtDecimals={usdtDecimals as bigint}
             addToShoppingCart={addToShoppingCart}
           />
