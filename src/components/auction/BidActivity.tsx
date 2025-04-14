@@ -7,14 +7,14 @@ import { Abi, formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 
 interface BidActivityProps {
-  auctionAddress: `0x${string}`;
   usdtDecimals: bigint;
+  auctionAddress: `0x${string}`;
   addToShoppingCart: (bidItem: CharterAuctionTypes.Position) => void;
 }
 
 const BidActivity = ({
-  auctionAddress,
   usdtDecimals,
+  auctionAddress,
   addToShoppingCart,
 }: BidActivityProps) => {
   const [roundPositions, setRoundPositions] = useState<
@@ -48,7 +48,7 @@ const BidActivity = ({
     if (!roundPositionsCount) return [];
     return [...Array(Number(roundPositionsCount)).keys()].map(
       (positionIndex) => ({
-        address: auctionAddress,
+        address: auctionAddress as `0x${string}`,
         abi: CharterAuctionABI as Abi,
         functionName: "getRoundPositionBidPrice",
         args: [currentRound, positionIndex] as const,
@@ -68,7 +68,7 @@ const BidActivity = ({
       roundPositionBidPrice
         .filter((bidPrice) => bidPrice.status === "success")
         .map((bidPrice, index) => ({
-          seat: (index).toString().padStart(3, "0"),
+          seat: index.toString().padStart(3, "0"),
           price: formattedWithCurrency(
             Number(formatUnits(bidPrice.result, Number(usdtDecimals)))
           ),
@@ -78,6 +78,12 @@ const BidActivity = ({
   }, [roundPositionBidPrice, usdtDecimals]);
 
   useEffect(() => {
+    if (roundPositionBidPriceError) {
+      toast.error("Failed to fetch round position bid price.", {
+        id: "roundPositionBidPriceLoading",
+      });
+    }
+
     if (currentRoundError) {
       toast.error("Failed to fetch current round.", {
         id: "currentRoundLoading",
@@ -89,13 +95,8 @@ const BidActivity = ({
         id: "roundPositionsCountLoading",
       });
     }
+  }, [roundPositionBidPriceError, currentRoundError, roundPositionsCountError]);
 
-    if (roundPositionBidPriceError) {
-      toast.error("Failed to fetch round position bid price.", {
-        id: "roundPositionBidPriceLoading",
-      });
-    }
-  }, [currentRoundError, roundPositionsCountError, roundPositionBidPriceError]);
   return (
     <div>
       <h3 className="text-sm text-white font-bold px-5">

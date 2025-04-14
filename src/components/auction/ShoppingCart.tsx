@@ -1,8 +1,11 @@
-import { useWriteContract } from "wagmi";
-import InfoRow from "./InfoRow";
-import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
+import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
+import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { Abi } from "viem";
+import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import InfoRow from "./InfoRow";
 
 interface IProps {
   shoppingCart: CharterAuctionTypes.Position[];
@@ -21,7 +24,13 @@ export default function ShoppingCart({
   handleBidPosition,
   handleRemovePosition,
 }: IProps) {
-  const { writeContract } = useWriteContract();
+  const { data: writeTxHash, writeContract } = useWriteContract();
+
+  const {
+    isLoading: isTxLoading,
+    isSuccess: isTxSuccess,
+    isError: isTxError,
+  } = useWaitForTransactionReceipt({ hash: writeTxHash });
 
   const handleApprove = () => {
     writeContract(
@@ -44,6 +53,31 @@ export default function ShoppingCart({
       }
     );
   };
+
+  const handleEndRound = () => {
+    writeContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "turnToNextRound",
+    });
+  };
+
+  useEffect(() => {
+    if (isTxLoading) {
+      toast.loading("Transaction is pending...", { id: "transactionLoading" });
+    }
+
+    if (isTxSuccess) {
+      toast.success("Transaction was successful!", {
+        id: "transactionLoading",
+      });
+    }
+
+    if (isTxError) {
+      toast.error("Transaction failed!", { id: "transactionLoading" });
+    }
+  }, [isTxSuccess, isTxLoading, isTxError]);
+
   return (
     <div>
       <h3 className="text-sm mt-5 text-white font-bold">My Shopping Cart</h3>
@@ -76,18 +110,26 @@ export default function ShoppingCart({
 
       <InfoRow label="My New Position:" value="$12,521.00" />
 
-      <div className="text-center flex items-center gap-3">
+      <div className="text-center flex items-center gap-3 flex-wrap mt-5">
         <button
           onClick={handleApprove}
-          className="cursor-pointer mt-5 sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
+          className="cursor-pointer sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
         >
           Approve
         </button>
         <button
           onClick={handleBidPosition}
-          className="cursor-pointer mt-5 sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
+          className="cursor-pointer sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
         >
           Merge Positions
+        </button>
+
+        <button
+          className="cursor-pointer hover:bg-white transition mt-2 sm:w-auto w-full text-sm font-bold text-black bg-[#979797] rounded-[10px] px-5 py-3"
+          onClick={handleEndRound}
+          disabled={isTxLoading}
+        >
+          {isTxLoading ? "Ending..." : "End Round"}
         </button>
       </div>
     </div>
