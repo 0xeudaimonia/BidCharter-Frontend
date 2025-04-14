@@ -355,14 +355,6 @@ export default function AuctionByIdPage() {
     },
   });
 
-  const handleEndRound = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "turnToNextRound",
-    });
-  };
-
   const handleEndAuction = () => {
     writeContract({
       address: auctionAddress as `0x${string}`,
@@ -525,13 +517,6 @@ export default function AuctionByIdPage() {
               disabled={isTxLoading || winner !== address}
             >
               {isTxLoading ? "Claiming..." : "Claim Charter NFT"}
-            </button>
-            <button
-              className="cursor-pointer hover:bg-white transition mt-2 sm:w-auto w-full text-sm font-bold text-black bg-[#979797] rounded-[10px] px-5 py-3"
-              onClick={handleEndRound}
-              disabled={isTxLoading}
-            >
-              {isTxLoading ? "Ending..." : "End Round"}
             </button>
             <button
               className="cursor-pointer hover:bg-white transition mt-2 sm:w-auto w-full text-sm font-bold text-black bg-[#979797] rounded-[10px] px-5 py-3"
