@@ -2,8 +2,6 @@ import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
   Bar,
   CartesianGrid,
   ComposedChart,
@@ -23,11 +21,7 @@ interface BidChartProps {
   usdtDecimals: bigint;
 }
 
-const BidChart = ({
-  chartData,
-  auctionAddress,
-  usdtDecimals,
-}: BidChartProps) => {
+const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
   const [graphbarData, setGraphbarData] = useState<
     CharterAuctionTypes.GraphbarItem[]
   >([]);
@@ -132,7 +126,7 @@ const BidChart = ({
         </ResponsiveContainer>
       </div>
 
-      <div className="w-full sm:h-[250px] h-[200px] -mt-5 relative">
+      {/* <div className="w-full sm:h-[250px] h-[200px] -mt-5 relative">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
             data={chartData}
@@ -180,7 +174,7 @@ const BidChart = ({
         <div className="absolute top-2/6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
           <span className="text-sm font-bold text-white">{0}</span>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 };
