@@ -248,6 +248,13 @@ export default function AuctionByIdPage() {
     }
   };
 
+  const handleRemovePosition = (position: CharterAuctionTypes.Position) => {
+    setShoppingCart((prev) =>
+      prev.filter((item) => item.index !== position.index)
+    );
+    toast.success("Position removed from shopping cart.");
+  };
+
   useWatchContractEvent({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -381,6 +388,7 @@ export default function AuctionByIdPage() {
           <ShoppingCart
             shoppingCart={shoppingCart}
             handleBidPosition={handleBidPosition}
+            handleRemovePosition={handleRemovePosition}
           />
           <BlindBidCart
             auctionAddress={auctionAddress as `0x${string}`}

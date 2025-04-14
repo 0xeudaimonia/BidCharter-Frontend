@@ -4,11 +4,13 @@ import { CharterAuctionTypes } from "@/src/types";
 interface IProps {
   shoppingCart: CharterAuctionTypes.Position[];
   handleBidPosition: () => void;
+  handleRemovePosition: (position: CharterAuctionTypes.Position) => void;
 }
 
 export default function ShoppingCart({
   shoppingCart,
   handleBidPosition,
+  handleRemovePosition,
 }: IProps) {
   return (
     <div>
@@ -29,7 +31,10 @@ export default function ShoppingCart({
               <div className="text-xs text-[#D9D9D9] font-normal">
                 {item.price}
               </div>
-              <div className="text-xs text-[#D9D9D9] font-normal cursor-pointer underline">
+              <div
+                className="text-xs text-[#D9D9D9] font-normal cursor-pointer underline"
+                onClick={() => handleRemovePosition(item)}
+              >
                 Remove
               </div>
             </div>
