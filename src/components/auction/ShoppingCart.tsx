@@ -1,15 +1,11 @@
-import {
-  useReadContract,
-  useWaitForTransactionReceipt,
-  useWriteContract,
-} from "wagmi";
-import InfoRow from "./InfoRow";
-import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
-import { ERC20ABI } from "@/src/libs/abi/ERC20";
-import { Abi } from "viem";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
+import { ERC20ABI } from "@/src/libs/abi/ERC20";
+import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import { Abi } from "viem";
+import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import InfoRow from "./InfoRow";
 
 interface IProps {
   shoppingCart: CharterAuctionTypes.Position[];
@@ -35,17 +31,6 @@ export default function ShoppingCart({
     isSuccess: isTxSuccess,
     isError: isTxError,
   } = useWaitForTransactionReceipt({ hash: writeTxHash });
-
-  const {
-    data: isBlindRoundEnded,
-    error: isBlindRoundEndedError,
-    // isLoading: isBlindRoundEndedLoading,
-    // refetch: refetchIsBlindRoundEnded,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "isBlindRoundEnded",
-  }) as GeneralTypes.ReadContractTypes;
 
   const handleApprove = () => {
     writeContract(
@@ -92,18 +77,6 @@ export default function ShoppingCart({
       toast.error("Transaction failed!", { id: "transactionLoading" });
     }
   }, [isTxSuccess, isTxLoading, isTxError]);
-
-  useEffect(() => {
-    if (isBlindRoundEndedError) {
-      toast.error("Error fetching blind round ended status", {
-        id: "isBlindRoundEndedError",
-      });
-    }
-  }, [isBlindRoundEndedError]);
-
-  if (isBlindRoundEnded) {
-    return null;
-  }
 
   return (
     <div>

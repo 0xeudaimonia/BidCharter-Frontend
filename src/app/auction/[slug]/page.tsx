@@ -229,6 +229,17 @@ export default function AuctionByIdPage() {
       contracts: positionContracts,
     }) as CharterAuctionTypes.FetchRoundBidData;
 
+  const {
+    data: isBlindRoundEnded,
+    error: isBlindRoundEndedError,
+    // isLoading: isBlindRoundEndedLoading,
+    // refetch: refetchIsBlindRoundEnded,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "isBlindRoundEnded",
+  }) as GeneralTypes.ReadContractTypes;
+
   const addToShoppingCart = (bidItem: CharterAuctionTypes.Position) => {
     // Check if the item is already in the shopping cart
     const isAlreadyInCart = shoppingCart.some(
@@ -401,7 +412,18 @@ export default function AuctionByIdPage() {
         id: "roundPositionsCountLoading",
       });
     }
-  }, [roundPositionBidPriceError, currentRoundError, roundPositionsCountError]);
+
+    if (isBlindRoundEndedError) {
+      toast.error("Failed to fetch blind round ended.", {
+        id: "isBlindRoundEndedLoading",
+      });
+    }
+  }, [
+    roundPositionBidPriceError,
+    currentRoundError,
+    roundPositionsCountError,
+    isBlindRoundEndedError,
+  ]);
 
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
@@ -444,25 +466,29 @@ export default function AuctionByIdPage() {
             }}
             entryFee={entryFee as bigint}
           />
-          <ShoppingCart
-            shoppingCart={shoppingCart}
-            handleBidPosition={handleBidPosition}
-            handleRemovePosition={handleRemovePosition}
-            auctionAddress={auctionAddress as `0x${string}`}
-            usdt={{
-              address: usdtAddress as `0x${string}`,
-              decimals: usdtDecimals as bigint,
-            }}
-            entryFee={entryFee as bigint}
-          />
-          <BlindBidCart
-            auctionAddress={auctionAddress as `0x${string}`}
-            usdt={{
-              address: usdtAddress as `0x${string}`,
-              decimals: usdtDecimals as bigint,
-            }}
-            entryFee={entryFee as bigint}
-          />
+          {isBlindRoundEnded && (
+            <ShoppingCart
+              shoppingCart={shoppingCart}
+              handleBidPosition={handleBidPosition}
+              handleRemovePosition={handleRemovePosition}
+              auctionAddress={auctionAddress as `0x${string}`}
+              usdt={{
+                address: usdtAddress as `0x${string}`,
+                decimals: usdtDecimals as bigint,
+              }}
+              entryFee={entryFee as bigint}
+            />
+          )}
+          {!isBlindRoundEnded && (
+            <BlindBidCart
+              auctionAddress={auctionAddress as `0x${string}`}
+              usdt={{
+                address: usdtAddress as `0x${string}`,
+                decimals: usdtDecimals as bigint,
+              }}
+              entryFee={entryFee as bigint}
+            />
+          )}
         </div>
         <div className="w-full md:w-[20%]">
           <BidActivity

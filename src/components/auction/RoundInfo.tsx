@@ -146,7 +146,7 @@ const RoundInfo = ({
           ? BigInt(myLatestBidPosition)
           : undefined,
       ],
-    });
+    }) as GeneralTypes.ReadContractTypes;
 
   useEffect(() => {
     if (rounderBidderContractsData) {
@@ -222,7 +222,11 @@ const RoundInfo = ({
     );
 
     const myPositionValue = formattedWithCurrency(
-      Number(rounderBidderBidPrice) || 0
+      rounderBidderBidPrice
+        ? Number(
+            formatUnits(rounderBidderBidPrice as bigint, Number(usdtDecimals))
+          )
+        : 0
     );
 
     setRoundInfo([
