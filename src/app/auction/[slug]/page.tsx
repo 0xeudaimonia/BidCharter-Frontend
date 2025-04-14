@@ -38,7 +38,7 @@ export default function AuctionByIdPage() {
 
   const roundInfoRef = useRef<RoundInfoRef>(null);
 
-  const { data: writeTxHash, writeContract } = useWriteContract();
+  const { data: writeTxHash } = useWriteContract();
 
   const {
     isLoading: isTxLoading,
