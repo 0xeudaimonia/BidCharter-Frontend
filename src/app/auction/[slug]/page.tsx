@@ -389,6 +389,12 @@ export default function AuctionByIdPage() {
             shoppingCart={shoppingCart}
             handleBidPosition={handleBidPosition}
             handleRemovePosition={handleRemovePosition}
+            auctionAddress={auctionAddress as `0x${string}`}
+            usdt={{
+              address: usdtAddress as `0x${string}`,
+              decimals: usdtDecimals as bigint,
+            }}
+            entryFee={entryFee as bigint}
           />
           <BlindBidCart
             auctionAddress={auctionAddress as `0x${string}`}
