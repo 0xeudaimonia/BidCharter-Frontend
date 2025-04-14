@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import {
-  // useAccount, 
-  useReadContract
+  // useAccount,
+  useReadContract,
 } from "wagmi";
 import { toast } from "sonner";
 import Image from "next/image";
@@ -21,9 +21,13 @@ interface AuctionInfoProps {
   usdt: GeneralTypes.Usdt;
 }
 
-export default function AuctionInfo({ auctionAddress, entryFee, usdt }: AuctionInfoProps) {
-
-  const [yatchInfo, setYatchInfo] = useState<CharterAuctionTypes.YachtInfo>(yachtInfoTemp);
+export default function AuctionInfo({
+  auctionAddress,
+  entryFee,
+  usdt,
+}: AuctionInfoProps) {
+  const [yatchInfo, setYatchInfo] =
+    useState<CharterAuctionTypes.YachtInfo>(yachtInfoTemp);
 
   const {
     data: nftAddress,
@@ -71,6 +75,17 @@ export default function AuctionInfo({ auctionAddress, entryFee, usdt }: AuctionI
     functionName: "minRaisedFundsAtBlindRound",
   }) as GeneralTypes.ReadContractTypes;
 
+  const {
+    data: raisedFunds,
+    error: raisedFundsError,
+    // isLoading: isRaisedFundsLoading,
+    // refetch: refetchRaisedFunds,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "raisedFundAtBlindRound",
+  }) as GeneralTypes.ReadContractTypes;
+
   useEffect(() => {
     if (nftAddressError) {
       toast.error("Failed to fetch NFT address.", { id: "nftAddressLoading" });
@@ -85,30 +100,63 @@ export default function AuctionInfo({ auctionAddress, entryFee, usdt }: AuctionI
     }
 
     if (reservePriceError) {
-      toast.error("Failed to fetch reserve funds.", { id: "reserveFundsLoading" });
+      toast.error("Failed to fetch reserve funds.", {
+        id: "reserveFundsLoading",
+      });
     }
-  }, [nftAddressError, nftIdError, tokenURIError, reservePriceError]);
+
+    if (raisedFundsError) {
+      toast.error("Failed to fetch raised funds.", {
+        id: "raisedFundsLoading",
+      });
+    }
+  }, [
+    nftAddressError,
+    nftIdError,
+    tokenURIError,
+    reservePriceError,
+    raisedFundsError,
+  ]);
 
   useEffect(() => {
     if (entryFee) {
-      setYatchInfo(prevState => ({
+      setYatchInfo((prevState) => ({
         ...prevState,
-        details: prevState.details.map(item => {
+        details: prevState.details.map((item) => {
           if (item.label === "Entry Fee:") {
             return {
               ...item,
-              value: formatUnits(entryFee ? BigInt(entryFee.toString()) : BigInt(0), usdt?.decimals ? Number(usdt?.decimals) : 18) + " USDT"
+              value:
+                formatUnits(
+                  entryFee ? BigInt(entryFee.toString()) : BigInt(0),
+                  usdt?.decimals ? Number(usdt?.decimals) : 18
+                ) + " USDT",
             };
           }
 
           if (item.label === "Reserve Price:") {
             return {
               ...item,
-              value: formatUnits(reservePrice ? BigInt(reservePrice.toString()) : BigInt(0), usdt?.decimals ? Number(usdt?.decimals) : 18) + " USDT"
+              value:
+                formatUnits(
+                  reservePrice ? BigInt(reservePrice.toString()) : BigInt(0),
+                  usdt?.decimals ? Number(usdt?.decimals) : 18
+                ) + " USDT",
+            };
+          }
+
+          if (item.label === "Blind Bid:") {
+            return {
+              ...item,
+              value:
+                formatUnits(
+                  raisedFunds ? BigInt(raisedFunds.toString()) : BigInt(0),
+                  usdt?.decimals ? Number(usdt?.decimals) : 18
+                ) + " USDT",
             };
           }
           return item;
-        })
+        }),
       }));
     }
 
@@ -119,7 +167,7 @@ export default function AuctionInfo({ auctionAddress, entryFee, usdt }: AuctionI
       //   image: tokenURI.toString()
       // }));
     }
-  }, [tokenURI, entryFee, usdt?.decimals, reservePrice]);
+  }, [tokenURI, entryFee, usdt?.decimals, reservePrice, raisedFunds]);
 
   return (
     <div>

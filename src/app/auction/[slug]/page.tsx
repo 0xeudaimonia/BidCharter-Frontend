@@ -1,8 +1,24 @@
 "use client";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState, useRef } from "react";
+import { toast } from "sonner";
+import { Abi } from "viem";
+import {
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWatchContractEvent,
+  useWriteContract,
+} from "wagmi";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
+
 import AuctionInfo from "@/src/components/auction/AuctionInfo";
 import BidActivity from "@/src/components/auction/BidActivity";
 import BidChart from "@/src/components/auction/BidChart";
 import BlindBidCart from "@/src/components/auction/BlindBidCart";
+import ClaimCharterNFT from "@/src/components/auction/ClaimCharterNFT";
+import ClaimReward from "@/src/components/auction/ClaimReward";
+import EndAuction from "@/src/components/auction/EndAuction";
 import RoundInfo from "@/src/components/auction/RoundInfo";
 import ShoppingCart from "@/src/components/auction/ShoppingCart";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
@@ -10,26 +26,17 @@ import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
 import { chartData, charterFactoryContractAddress } from "@/src/libs/constants";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { Abi, formatEther } from "viem";
-import {
-  useAccount,
-  useReadContract,
-  useWaitForTransactionReceipt,
-  useWatchContractEvent,
-  useWriteContract,
-} from "wagmi";
+
+interface RoundInfoRef extends HTMLDivElement {
+  refreshRoundInfo: () => void;
+}
 
 export default function AuctionByIdPage() {
   const params = useParams();
   const { slug } = params;
   const auctionId = Number(slug) + 1;
 
-  const { address } = useAccount();
+  const roundInfoRef = useRef<RoundInfoRef>(null);
 
   const { data: writeTxHash, writeContract } = useWriteContract();
 
@@ -50,6 +57,7 @@ export default function AuctionByIdPage() {
     }
 
     if (isTxSuccess) {
+      roundInfoRef.current?.refreshRoundInfo();
       toast.success("Transaction was successful!", {
         id: "transactionLoading",
       });
@@ -70,6 +78,17 @@ export default function AuctionByIdPage() {
     abi: CharterFactoryABI,
     functionName: "getAuctionAddress",
     args: [BigInt(auctionId)],
+  }) as GeneralTypes.ReadContractTypes;
+
+  const {
+    data: currentRound,
+    error: currentRoundError,
+    // isLoading: isCurrentRoundLoading,
+    // refetch: refetchCurrentRound,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "currentRound",
   }) as GeneralTypes.ReadContractTypes;
 
   const {
@@ -131,62 +150,22 @@ export default function AuctionByIdPage() {
     }
   }, [auctionAddressError, usdtAddressError, usdtDecimalsError, entryFeeError]);
 
-  const {
-    data: rewards,
-    error: rewardsError,
-    // isLoading: isRewardsLoading,
-    refetch: refetchRewards,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "rewards",
-    args: [address || "0x0"],
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    // if (isRewardsLoading) {
-    //   toast.loading("Fetching rewards...", { id: "rewardsLoading" });
-    // }
-
-    if (rewardsError) {
-      toast.error("Failed to fetch rewards.", { id: "rewardsLoading" });
-    }
-
-    // if (rewards) {
-    //   toast.success("Rewards fetched successfully!", { id: "rewardsLoading" });
-    // }
-  }, [rewardsError]);
-
-  const {
-    data: winner,
-    error: winnerError,
-    // isLoading: isWinnerLoading,
-    // refetch: refetchWinner,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "winner",
-  }) as GeneralTypes.ReadContractTypes;
-
-  useEffect(() => {
-    if (winnerError) {
-      toast.error("Failed to fetch winner.", { id: "winnerLoading" });
-    }
-
-    // if (winner) {
-    //   toast.success("Winner fetched successfully!", { id: "winnerLoading" });
-    // }
-
-    // if (isWinnerLoading) {
-    //   toast.loading("Fetching winner...", { id: "winnerLoading" });
-    // }
-  }, [winnerError]);
-
   // Auction info derived from contract data
   const auctionInfo = {
     title: `BidCharter Auction #${auctionId}`,
     auctionTime: "03:11:28",
   };
+
+  const {
+    data: isBlindRoundEnded,
+    error: isBlindRoundEndedError,
+    // isLoading: isBlindRoundEndedLoading,
+    // refetch: refetchIsBlindRoundEnded,
+  } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "isBlindRoundEnded",
+  }) as GeneralTypes.ReadContractTypes;
 
   const addToShoppingCart = (bidItem: CharterAuctionTypes.Position) => {
     // Check if the item is already in the shopping cart
@@ -201,51 +180,6 @@ export default function AuctionByIdPage() {
 
     setShoppingCart((prev) => [...prev, bidItem]);
     toast.success("Added to shopping cart.");
-  };
-
-  const handleBidPosition = () => {
-    if (shoppingCart.length === 0) {
-      toast.warning("Please select at least one position.");
-      return;
-    }
-    if (shoppingCart.length === 1) {
-      writeContract(
-        {
-          address: auctionAddress as `0x${string}`,
-          abi: CharterAuctionABI as Abi,
-          functionName: "bidPosition",
-          args: [BigInt(shoppingCart[0].index)],
-        },
-        {
-          onSuccess: () => {
-            toast.success("Position bid successfully.");
-            setShoppingCart([]);
-          },
-          onError: () => {
-            toast.error("Failed to bid position.");
-          },
-        }
-      );
-    }
-    if (shoppingCart.length > 1) {
-      writeContract(
-        {
-          address: auctionAddress as `0x${string}`,
-          abi: CharterAuctionABI as Abi,
-          functionName: "bidPositions",
-          args: [shoppingCart.map((item) => BigInt(item.index))],
-        },
-        {
-          onSuccess: () => {
-            toast.success("Positions bid successfully.");
-            setShoppingCart([]);
-          },
-          onError: () => {
-            toast.error("Failed to bid positions.");
-          },
-        }
-      );
-    }
   };
 
   const handleRemovePosition = (position: CharterAuctionTypes.Position) => {
@@ -277,33 +211,6 @@ export default function AuctionByIdPage() {
     },
   });
 
-  const handleClaimRewards = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "withdrawRewards",
-    });
-    toast.success("Rewards claimed successfully.");
-  };
-
-  useWatchContractEvent({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    eventName: "RewardsWithdrawn",
-    onLogs: (logs) => {
-      console.log("RewardsWithdrawn event:", logs);
-      refetchRewards?.();
-    },
-  });
-
-  const handleClaimNFT = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "withdrawNFT",
-    });
-  };
-
   useWatchContractEvent({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -313,22 +220,6 @@ export default function AuctionByIdPage() {
       // refetchNftAddress?.();
     },
   });
-
-  const handleEndRound = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "turnToNextRound",
-    });
-  };
-
-  const handleEndAuction = () => {
-    writeContract({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "endAuction",
-    });
-  };
 
   useWatchContractEvent({
     address: auctionAddress as `0x${string}`,
@@ -349,6 +240,20 @@ export default function AuctionByIdPage() {
   //   );
   // }
 
+  // Error handling of BidActivity
+  useEffect(() => {
+    if (isBlindRoundEndedError) {
+      toast.error("Failed to fetch blind round ended.", {
+        id: "isBlindRoundEndedLoading",
+      });
+    }
+    if (currentRoundError) {
+      toast.error("Failed to fetch current round.", {
+        id: "currentRoundLoading",
+      });
+    }
+  }, [isBlindRoundEndedError, currentRoundError]);
+
   return (
     <div className="min-h-screen bg-[#202020] text-white p-4">
       <header className="flex flex-col md:flex-row justify-between">
@@ -366,7 +271,13 @@ export default function AuctionByIdPage() {
             </p>
           </Link>
         </div>
-        <RoundInfo auctionAddress={auctionAddress as `0x${string}`} />
+        <RoundInfo
+          ref={roundInfoRef}
+          currentRound={currentRound as bigint}
+          auctionAddress={auctionAddress as `0x${string}`}
+          usdtDecimals={usdtDecimals as bigint}
+          usdtAddress={usdtAddress as `0x${string}`}
+        />
 
         <div className="sm:w-auto w-full">
           <button className="cursor-pointer sm:w-auto w-full bg-[#204119] text-sm text-[#CAFFDB] py-5 px-10">
@@ -385,31 +296,35 @@ export default function AuctionByIdPage() {
             }}
             entryFee={entryFee as bigint}
           />
-          <ShoppingCart
-            shoppingCart={shoppingCart}
-            handleBidPosition={handleBidPosition}
-            handleRemovePosition={handleRemovePosition}
-            auctionAddress={auctionAddress as `0x${string}`}
-            usdt={{
-              address: usdtAddress as `0x${string}`,
-              decimals: usdtDecimals as bigint,
-            }}
-            entryFee={entryFee as bigint}
-          />
-          <BlindBidCart
-            auctionAddress={auctionAddress as `0x${string}`}
-            usdt={{
-              address: usdtAddress as `0x${string}`,
-              decimals: usdtDecimals as bigint,
-            }}
-            entryFee={entryFee as bigint}
-          />
+          {isBlindRoundEnded && (
+            <ShoppingCart
+              shoppingCart={shoppingCart}
+              handleRemovePosition={handleRemovePosition}
+              auctionAddress={auctionAddress as `0x${string}`}
+              usdt={{
+                address: usdtAddress as `0x${string}`,
+                decimals: usdtDecimals as bigint,
+              }}
+              entryFee={entryFee as bigint}
+            />
+          )}
+          {!isBlindRoundEnded && (
+            <BlindBidCart
+              auctionAddress={auctionAddress as `0x${string}`}
+              usdt={{
+                address: usdtAddress as `0x${string}`,
+                decimals: usdtDecimals as bigint,
+              }}
+              entryFee={entryFee as bigint}
+            />
+          )}
         </div>
         <div className="w-full md:w-[20%]">
           <BidActivity
-            auctionAddress={auctionAddress as `0x${string}`}
             usdtDecimals={usdtDecimals as bigint}
+            currentRound={currentRound as bigint}
             addToShoppingCart={addToShoppingCart}
+            auctionAddress={auctionAddress as `0x${string}`}
           />
         </div>
 
@@ -420,59 +335,11 @@ export default function AuctionByIdPage() {
             usdtDecimals={usdtDecimals as bigint}
           />
         </div>
-
         <div className="w-full md:w-[20%] flex flex-col justify-items-end sm:gap-[30%]">
-          <div className="w-full">
-            <h3 className="text-sm text-white font-bold">My Rewards</h3>
-            <div className="border border-[#D9D9D940] rounded-2xl p-4 mt-5">
-              <div className="flex gap-3">
-                <span className="text-xs text-[#D9D9D9] font-normal">
-                  Total:
-                </span>
-                <span className="text-xs text-[#0CB400] font-bold">
-                  {rewards
-                    ? `$${
-                        rewards
-                          ? Number(formatEther(rewards as bigint)).toFixed(2)
-                          : "0.00"
-                      }`
-                    : "$0.00"}
-                </span>
-              </div>
-            </div>
-            <div className="sm:text-end mt-3 sm:mb-0 mb-3">
-              <button
-                className="cursor-pointer mx-auto sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
-                onClick={handleClaimRewards}
-                disabled={isTxLoading}
-              >
-                {isTxLoading ? "Claiming..." : "Claim Rewards"}
-              </button>
-            </div>
-          </div>
-
+          <ClaimReward auctionAddress={auctionAddress as `0x${string}`} />
           <div className="text-end flex flex-col sm:w-auto w-full">
-            <button
-              className="cursor-pointer sm:w-auto w-full text-sm font-bold text-black bg-white rounded-[10px] px-5 py-3"
-              onClick={handleClaimNFT}
-              disabled={isTxLoading || winner !== address}
-            >
-              {isTxLoading ? "Claiming..." : "Claim Charter NFT"}
-            </button>
-            <button
-              className="cursor-pointer hover:bg-white transition mt-2 sm:w-auto w-full text-sm font-bold text-black bg-[#979797] rounded-[10px] px-5 py-3"
-              onClick={handleEndRound}
-              disabled={isTxLoading}
-            >
-              {isTxLoading ? "Ending..." : "End Round"}
-            </button>
-            <button
-              className="cursor-pointer hover:bg-white transition mt-2 sm:w-auto w-full text-sm font-bold text-black bg-[#979797] rounded-[10px] px-5 py-3"
-              onClick={handleEndAuction}
-              disabled={isTxLoading}
-            >
-              {isTxLoading ? "Ending..." : "End Auction"}
-            </button>
+            <ClaimCharterNFT auctionAddress={auctionAddress as `0x${string}`} />
+            <EndAuction auctionAddress={auctionAddress as `0x${string}`} />
           </div>
         </div>
       </div>
