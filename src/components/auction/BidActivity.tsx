@@ -51,7 +51,7 @@ const BidActivity = ({
         address: auctionAddress,
         abi: CharterAuctionABI as Abi,
         functionName: "getRoundPositionBidPrice",
-        args: [currentRound, positionIndex + 1] as const,
+        args: [currentRound, positionIndex] as const,
       })
     );
   }, [roundPositionsCount, currentRound, auctionAddress]);
@@ -68,7 +68,7 @@ const BidActivity = ({
       roundPositionBidPrice
         .filter((bidPrice) => bidPrice.status === "success")
         .map((bidPrice, index) => ({
-          seat: (index + 1).toString().padStart(3, "0"),
+          seat: (index).toString().padStart(3, "0"),
           price: formattedWithCurrency(
             Number(formatUnits(bidPrice.result, Number(usdtDecimals)))
           ),
