@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { forwardRef, useEffect, useState } from "react";
 import {
   // useAccount,
   useReadContract,
@@ -21,11 +21,10 @@ interface AuctionInfoProps {
   usdt: GeneralTypes.Usdt;
 }
 
-export default function AuctionInfo({
-  auctionAddress,
-  entryFee,
-  usdt,
-}: AuctionInfoProps) {
+const AunctionInfo = forwardRef<
+  { refreshAuctionInfo: () => void },
+  AuctionInfoProps
+>(({ auctionAddress, entryFee, usdt }: AuctionInfoProps, ref) => {
   const [yatchInfo, setYatchInfo] =
     useState<CharterAuctionTypes.YachtInfo>(yachtInfoTemp);
 
@@ -79,12 +78,16 @@ export default function AuctionInfo({
     data: raisedFunds,
     error: raisedFundsError,
     // isLoading: isRaisedFundsLoading,
-    // refetch: refetchRaisedFunds,
+    refetch: refetchRaisedFunds,
   } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "raisedFundAtBlindRound",
   }) as GeneralTypes.ReadContractTypes;
+
+  const refreshAuctionInfo = () => {
+    refetchRaisedFunds?.();
+  };
 
   useEffect(() => {
     if (nftAddressError) {
@@ -169,6 +172,13 @@ export default function AuctionInfo({
     }
   }, [tokenURI, entryFee, usdt?.decimals, reservePrice, raisedFunds]);
 
+  // Expose refreshAuctionInfo through ref
+  useEffect(() => {
+    if (typeof ref === "object" && ref?.current) {
+      ref.current.refreshAuctionInfo = refreshAuctionInfo;
+    }
+  }, [ref]);
+
   return (
     <div>
       <h3 className="text-xl text-white font-bold">{yatchInfo.title}</h3>
@@ -190,4 +200,8 @@ export default function AuctionInfo({
       ))}
     </div>
   );
-}
+});
+
+AunctionInfo.displayName = "AunctionInfo";
+
+export default AunctionInfo;
