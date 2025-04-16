@@ -1,51 +1,91 @@
 export const CharterAuctionABI = [
   {
-    type: "constructor",
-    inputs: [
-      { name: "_usdt", type: "address", internalType: "address" },
-      { name: "_entryFee", type: "uint256", internalType: "uint256" },
-      { name: "_minRaisedFundsAtBlindRound", type: "uint256", internalType: "uint256" },
-      { name: "_broker", type: "address", internalType: "address" },
-      { name: "_nft", type: "address", internalType: "address" },
-      { name: "_nftId", type: "uint256", internalType: "uint256" },
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_usdt",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_entryFee",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_minRaisedFundsAtBlindRound",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_broker",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_nft",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_nftId",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    stateMutability: "nonpayable",
+    "stateMutability": "nonpayable"
   },
   {
-    type: "function",
-    name: "MIN_POSITIONS",
-    inputs: [],
-    outputs: [
-      { name: "", type: "uint256", internalType: "uint256" },
+    "type": "function",
+    "name": "MIN_POSITIONS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    stateMutability: "view",
+    "stateMutability": "view"
   },
   {
-    type: "function",
-    name: "bidAtBlindRound",
-    inputs: [
-      { name: "_bidInfo", type: "bytes32", internalType: "bytes32" }, 
+    "type": "function",
+    "name": "bidAtBlindRound",
+    "inputs": [
+      {
+        "name": "_bidInfo",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
     ],
-    outputs: [],
-    stateMutability: "nonpayable",
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-    type: "function",
-    name: "bidPosition",
-    inputs: [
-      { name: "positionIndex", type: "uint256", internalType: "uint256" },
+    "type": "function",
+    "name": "bidPosition",
+    "inputs": [
+      {
+        "name": "positionIndex",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
     ],
-    outputs: [],
-    stateMutability: "nonpayable",
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
-    type: "function",
-    name: "bidPositions",
-    inputs: [
-      { name: "positionIndexes", type: "uint256[]", internalType: "uint256[]" },
+    "type": "function",
+    "name": "bidPositions",
+    "inputs": [
+      {
+        "name": "positionIndexes",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
     ],
-    outputs: [],
-    stateMutability: "nonpayable",
+    "outputs": [],
+    "stateMutability": "nonpayable"
   },
   {
     "type": "function",
@@ -140,6 +180,25 @@ export const CharterAuctionABI = [
   },
   {
     "type": "function",
+    "name": "getActionCount",
+    "inputs": [
+      {
+        "name": "round",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "getBlindBidder",
     "inputs": [
       {
@@ -204,6 +263,30 @@ export const CharterAuctionABI = [
         "name": "",
         "type": "bool",
         "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getNextPrice",
+    "inputs": [
+      {
+        "name": "_bidder",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_positionIndexes",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -311,6 +394,30 @@ export const CharterAuctionABI = [
         "name": "bidder",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoundNextBidPrice",
+    "inputs": [
+      {
+        "name": "_bidder",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_round",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [
@@ -579,6 +686,11 @@ export const CharterAuctionABI = [
       }
     ],
     "outputs": [
+      {
+        "name": "actionCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
       {
         "name": "ended",
         "type": "bool",
@@ -965,6 +1077,11 @@ export const CharterAuctionABI = [
   },
   {
     "type": "error",
+    "name": "MaliciousBidder",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "NoBidders",
     "inputs": []
   },
@@ -991,6 +1108,11 @@ export const CharterAuctionABI = [
   {
     "type": "error",
     "name": "NotWinner",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "OverflowBid",
     "inputs": []
   },
   {
@@ -1029,4 +1151,4 @@ export const CharterAuctionABI = [
     "name": "ValueShouldBePositiveForGeometricMean",
     "inputs": []
   }
-]; 
+];
