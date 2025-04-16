@@ -157,29 +157,6 @@ export default function BlindBidCart({
     },
   });
 
-  useWatchContractEvent({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    eventName: "BlindBidEntered",
-    onLogs: (logs) => {
-      console.log("BlindBidEntered event:", logs);
-      toast.success("Blind bid entered.");
-      // refetchCurrentRound?.();
-      // refetchPositions?.();
-    },
-  });
-
-  useWatchContractEvent({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    eventName: "NewRoundStarted",
-    onLogs: (logs) => {
-      console.log("NewRoundStarted event:", logs);
-      toast.success("New round started.");
-      // refetchAllowance?.();
-    },
-  });
-
   return (
     <div>
       <h3 className="text-sm mt-5 text-white font-bold">My Shopping Cart</h3>

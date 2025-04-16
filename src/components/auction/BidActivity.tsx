@@ -1,7 +1,7 @@
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { formattedWithCurrency } from "@/src/utils/utils";
-import { useEffect, useMemo, useState } from "react";
+import { forwardRef, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Abi, formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
@@ -13,12 +13,10 @@ interface BidActivityProps {
   addToShoppingCart: (bidItem: CharterAuctionTypes.Position) => void;
 }
 
-const BidActivity = ({
-  usdtDecimals,
-  currentRound,
-  auctionAddress,
-  addToShoppingCart,
-}: BidActivityProps) => {
+const BidActivity = forwardRef<
+  { refreshBidActivity: () => void },
+  BidActivityProps
+>(({ usdtDecimals, currentRound, auctionAddress, addToShoppingCart }, ref) => {
   const [roundPositions, setRoundPositions] = useState<
     CharterAuctionTypes.Position[]
   >([]);
@@ -26,8 +24,8 @@ const BidActivity = ({
   const {
     data: roundPositionsCount,
     error: roundPositionsCountError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
+    // isLoading: isRoundPositionsCountLoading,
+    refetch: refetchRoundPositionsCount,
   } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -46,6 +44,10 @@ const BidActivity = ({
       })
     );
   }, [roundPositionsCount, currentRound, auctionAddress]);
+
+  const refreshBidActivity = () => {
+    refetchRoundPositionsCount?.();
+  };
 
   const { data: roundPositionBidPrice, error: roundPositionBidPriceError } =
     useReadContracts({
@@ -82,6 +84,12 @@ const BidActivity = ({
     }
   }, [roundPositionBidPriceError, roundPositionsCountError]);
 
+  useEffect(() => {
+    if (typeof ref === "object" && ref?.current) {
+      ref.current.refreshBidActivity = refreshBidActivity;
+    }
+  }, [ref]);
+
   return (
     <div>
       <h3 className="text-sm text-white font-bold px-5">
@@ -116,6 +124,8 @@ const BidActivity = ({
       </div>
     </div>
   );
-};
+});
+
+BidActivity.displayName = "BidActivity";
 
 export default BidActivity;
