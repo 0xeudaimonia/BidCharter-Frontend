@@ -34,6 +34,7 @@ export default function ClaimReward({ auctionAddress }: IProps) {
     });
     toast.success("Rewards claimed successfully.");
   };
+  
   const {
     data: rewards,
     error: rewardsError,

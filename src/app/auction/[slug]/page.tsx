@@ -31,12 +31,22 @@ interface RoundInfoRef extends HTMLDivElement {
   refreshRoundInfo: () => void;
 }
 
+interface AuctionInfoRef extends HTMLDivElement {
+  refreshAuctionInfo: () => void;
+}
+
+interface BidActivityRef extends HTMLDivElement {
+  refreshBidActivity: () => void;
+}
+
 export default function AuctionByIdPage() {
   const params = useParams();
   const { slug } = params;
   const auctionId = Number(slug) + 1;
 
   const roundInfoRef = useRef<RoundInfoRef>(null);
+  const auctionInfoRef = useRef<AuctionInfoRef>(null);
+  const bidActivityRef = useRef<BidActivityRef>(null);
 
   const { data: writeTxHash } = useWriteContract();
 
@@ -84,7 +94,7 @@ export default function AuctionByIdPage() {
     data: currentRound,
     error: currentRoundError,
     // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
+    refetch: refetchCurrentRound,
   } = useReadContract({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
@@ -195,8 +205,8 @@ export default function AuctionByIdPage() {
     eventName: "BidPosition",
     onLogs: (logs) => {
       console.log("BidPosition event:", logs);
-      // refetchCurrentRound?.();
-      // refetchPositions?.();
+      roundInfoRef.current?.refreshRoundInfo();
+      auctionInfoRef.current?.refreshAuctionInfo();
     },
   });
 
@@ -206,8 +216,8 @@ export default function AuctionByIdPage() {
     eventName: "BidPositions",
     onLogs: (logs) => {
       console.log("BidPosition event:", logs);
-      // refetchCurrentRound?.();
-      // refetchPositions?.();
+      roundInfoRef.current?.refreshRoundInfo();
+      auctionInfoRef.current?.refreshAuctionInfo();
     },
   });
 
@@ -229,6 +239,30 @@ export default function AuctionByIdPage() {
       console.log("EndAuction event:", logs);
       // refetchCurrentRound?.();
       // refetchPositions?.();
+    },
+  });
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterFactoryABI as Abi,
+    eventName: "NewRoundStarted",
+    onLogs: (logs) => {
+      console.log("NewRoundStarted event:", logs);
+      toast.success("New round started.");
+      refetchCurrentRound?.();
+    },
+  });
+
+  useWatchContractEvent({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    eventName: "BlindBidEntered",
+    onLogs: (logs) => {
+      console.log("BlindBidEntered event:", logs);
+      toast.success("Blind bid entered.");
+      bidActivityRef.current?.refreshBidActivity();
+      // Refresh auction info to update the blind bid data
+      auctionInfoRef.current?.refreshAuctionInfo();
     },
   });
 
@@ -289,6 +323,7 @@ export default function AuctionByIdPage() {
       <div className="flex flex-col md:flex-row justify-between gap-7 mt-8">
         <div className="w-full md:w-[20%]">
           <AuctionInfo
+            ref={auctionInfoRef}
             auctionAddress={auctionAddress as `0x${string}`}
             usdt={{
               address: usdtAddress as `0x${string}`,
@@ -325,6 +360,7 @@ export default function AuctionByIdPage() {
             currentRound={currentRound as bigint}
             addToShoppingCart={addToShoppingCart}
             auctionAddress={auctionAddress as `0x${string}`}
+            ref={bidActivityRef}
           />
         </div>
 
