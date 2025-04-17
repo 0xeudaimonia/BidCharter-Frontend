@@ -68,6 +68,8 @@ export default function AuctionByIdPage() {
 
     if (isTxSuccess) {
       roundInfoRef.current?.refreshRoundInfo();
+      auctionInfoRef.current?.refreshAuctionInfo();
+      bidActivityRef.current?.refreshBidActivity();
       toast.success("Transaction was successful!", {
         id: "transactionLoading",
       });
@@ -341,6 +343,7 @@ export default function AuctionByIdPage() {
                 decimals: usdtDecimals as bigint,
               }}
               entryFee={entryFee as bigint}
+              usdtDecimals={usdtDecimals as bigint}
             />
           )}
           {!isBlindRoundEnded && (
