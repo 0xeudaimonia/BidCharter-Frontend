@@ -91,6 +91,7 @@ const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
       address: auctionAddress as `0x${string}`,
       abi: CharterAuctionABI as Abi,
       functionName: "getRoundBiddersCount",
+      args: [BigInt(currentRound > 1 ? Number(currentRound) - 1 : 0)],
     }) as GeneralTypes.ReadContractTypes;
 
     const {
@@ -113,10 +114,8 @@ const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
             abi: CharterAuctionABI as Abi,
             functionName: "getRoundBidder",
             args: [
-              currentRound !== undefined
-                ? BigInt(Number(currentRound))
-                : BigInt(0),
-              index,
+              BigInt(currentRound > 1 ? Number(currentRound) - 1 : 0),
+              BigInt(index),
             ],
           };
         }
@@ -140,7 +139,7 @@ const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
       abi: CharterAuctionABI as Abi,
       functionName: "getRoundBidderBidPricesCount",
       args: [
-        currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
+        BigInt(currentRound > 1 ? Number(currentRound) - 1 : 0),
         myBidderIndex !== undefined ? BigInt(myBidderIndex) : undefined,
       ],
     }) as GeneralTypes.ReadContractTypes;
@@ -154,7 +153,7 @@ const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
       abi: CharterAuctionABI as Abi,
       functionName: "getRoundBidderBidPrice",
       args: [
-        currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
+        BigInt(currentRound > 1 ? Number(currentRound) - 1 : 0),
         myBidderIndex !== undefined ? BigInt(myBidderIndex) : undefined,
         myLatestBidPosition !== undefined
           ? BigInt(myLatestBidPosition !== 0 ? myLatestBidPosition - 1 : 0)
