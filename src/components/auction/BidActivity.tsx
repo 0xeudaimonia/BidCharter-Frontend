@@ -60,13 +60,13 @@ const BidActivity = forwardRef<
     const sortedPositions = roundPositionBidPrice
       .filter((bidPrice) => bidPrice.status === "success")
       .map((bidPrice, index) => ({
-        seat: index.toString().padStart(3, "0"),
         price: Number(formatUnits(bidPrice.result, Number(usdtDecimals))),
         index: index,
       }))
       .sort((a, b) => b.price - a.price)
-      .map((position) => ({
+      .map((position, index) => ({
         ...position,
+        seat: (index + 1).toString().padStart(3, "0"),
         price: formattedWithCurrency(position.price),
       }));
 

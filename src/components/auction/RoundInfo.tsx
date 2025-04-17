@@ -157,7 +157,7 @@ const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
         currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
         myBidderIndex !== undefined ? BigInt(myBidderIndex) : undefined,
         myLatestBidPosition !== undefined
-          ? BigInt(myLatestBidPosition)
+          ? BigInt(myLatestBidPosition !== 0 ? myLatestBidPosition - 1 : 0)
           : undefined,
       ],
     }) as GeneralTypes.ReadContractTypes;
