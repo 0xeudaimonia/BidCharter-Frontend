@@ -11,11 +11,11 @@ import { baseMainnet, baseSepolia, sepolia } from "@/src/libs/chain";
 const config = getDefaultConfig({
   appName: "BidCharter",
   projectId: "Project_id",
-  chains: [baseMainnet, baseSepolia, sepolia],
+  chains: [sepolia, baseMainnet, baseSepolia],
   ssr: true,
 });
 
-const queryClient = new QueryClient();  
+const queryClient = new QueryClient();
 
 function Provider({ children }: { children: ReactNode }) {
   return (
