@@ -1,10 +1,16 @@
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
+import { formattedWithCurrency } from "@/src/utils/utils";
 import { useEffect } from "react";
 import { toast } from "sonner";
-import { Abi } from "viem";
-import { useWaitForTransactionReceipt, useWriteContract } from "wagmi";
+import { Abi, formatUnits } from "viem";
+import {
+  useAccount,
+  useReadContract,
+  useWaitForTransactionReceipt,
+  useWriteContract,
+} from "wagmi";
 // import InfoRow from "./InfoRow";
 
 interface IProps {
@@ -13,6 +19,7 @@ interface IProps {
   auctionAddress: `0x${string}`;
   usdt: GeneralTypes.Usdt;
   entryFee: bigint;
+  usdtDecimals: bigint;
 }
 
 export default function ShoppingCart({
@@ -21,14 +28,22 @@ export default function ShoppingCart({
   usdt,
   entryFee,
   handleRemovePosition,
+  usdtDecimals,
 }: IProps) {
   const { data: writeTxHash, writeContract } = useWriteContract();
-
+  const { address } = useAccount();
   const {
     isLoading: isTxLoading,
     isSuccess: isTxSuccess,
     isError: isTxError,
   } = useWaitForTransactionReceipt({ hash: writeTxHash });
+
+  const { data: nextPrice, error: nextPriceError } = useReadContract({
+    address: auctionAddress as `0x${string}`,
+    abi: CharterAuctionABI as Abi,
+    functionName: "getNextPrice",
+    args: [address, shoppingCart.map((position) => BigInt(position.index))],
+  }) as GeneralTypes.ReadContractTypes;
 
   const handleApprove = () => {
     writeContract(
@@ -119,6 +134,12 @@ export default function ShoppingCart({
     }
   }, [isTxSuccess, isTxLoading, isTxError]);
 
+  useEffect(() => {
+    if (nextPriceError) {
+      toast.error("Failed to get next price.", { id: "nextPriceError" });
+    }
+  }, [nextPriceError]);
+
   return (
     <div>
       <h3 className="text-sm mt-5 text-white font-bold">My Shopping Cart</h3>
@@ -146,6 +167,20 @@ export default function ShoppingCart({
               </div>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <div className="text-sm text-white font-normal">My New Position:</div>
+        <div className="text-sm text-[#D95252] font-bold mt-1">
+          {formattedWithCurrency(
+            Number(
+              formatUnits(
+                (nextPrice as bigint) || BigInt(0),
+                Number(usdtDecimals)
+              )
+            )
+          )}
         </div>
       </div>
 
