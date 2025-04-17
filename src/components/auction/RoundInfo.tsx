@@ -21,287 +21,337 @@ interface RoundInfoProps {
 }
 
 const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
-  ({
-    auctionAddress,
-    currentRound,
-    usdtDecimals,
-    usdtAddress,
-  }: RoundInfoProps,
-  ref
-) => {
-  const { address } = useAccount();
+  (
+    { auctionAddress, currentRound, usdtDecimals, usdtAddress }: RoundInfoProps,
+    ref
+  ) => {
+    const { address } = useAccount();
 
-  const [roundInfo, setRoundInfo] = useState<
-    CharterAuctionTypes.RoundInfoItem[]
-  >([
-    { label: "Round:", value: "0" },
-    { label: "My Position:", value: "0" },
-    { label: "Target Price:", value: "0" },
-    { label: "Winner:", value: "" },
-    { label: "Staked Funds:", value: "0" },
-  ]);
+    const [roundInfo, setRoundInfo] = useState<
+      CharterAuctionTypes.RoundInfoItem[]
+    >([
+      { label: "Round:", value: "0" },
+      { label: "My Position:", value: "0" },
+      { label: "Target Price:", value: "0" },
+      { label: "Winner:", value: "" },
+      { label: "Staked Funds:", value: "0" },
+      { label: "Action Left:", value: "0" },
+    ]);
 
-  const [myBidderIndex, setMyBidderIndex] = useState<number | undefined>(
-    undefined
-  );
-  const [myLatestBidPosition, setMyLatestBidPosition] = useState<
-    number | undefined
-  >(undefined);
+    const [myBidderIndex, setMyBidderIndex] = useState<number | undefined>(
+      undefined
+    );
+    const [myLatestBidPosition, setMyLatestBidPosition] = useState<
+      number | undefined
+    >(undefined);
 
-  const {
-    data: isBlindRoundEnded,
-    error: isBlindRoundEndedError,
-    // isLoading: isBlindRoundEndedLoading,
-    refetch: refetchIsBlindRoundEnded,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "isBlindRoundEnded",
-  }) as GeneralTypes.ReadContractTypes;
+    const {
+      data: isBlindRoundEnded,
+      error: isBlindRoundEndedError,
+      // isLoading: isBlindRoundEndedLoading,
+      refetch: refetchIsBlindRoundEnded,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "isBlindRoundEnded",
+    }) as GeneralTypes.ReadContractTypes;
 
-  const { 
-    data: stakedFunds, 
-    error: stakedFundsError,
-    refetch: refetchStakedFunds
-  } = useReadContract({
-    address: usdtAddress as `0x${string}`,
-    abi: ERC20ABI as Abi,
-    functionName: "balanceOf",
-    args: [auctionAddress as `0x${string}`],
-    // Error handling moved to useEffect
-  }) as GeneralTypes.ReadContractTypes;
+    const {
+      data: stakedFunds,
+      error: stakedFundsError,
+      refetch: refetchStakedFunds,
+    } = useReadContract({
+      address: usdtAddress as `0x${string}`,
+      abi: ERC20ABI as Abi,
+      functionName: "balanceOf",
+      args: [auctionAddress as `0x${string}`],
+      // Error handling moved to useEffect
+    }) as GeneralTypes.ReadContractTypes;
 
-  const {
-    data: targetPrice,
-    error: targetPriceError,
-    // isLoading: isTargetPriceLoading,
-    refetch: refetchTargetPrice,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "getTargetPrice",
-    args: [
-      currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
-    ],
-  }) as GeneralTypes.ReadContractTypes;
+    const {
+      data: targetPrice,
+      error: targetPriceError,
+      // isLoading: isTargetPriceLoading,
+      refetch: refetchTargetPrice,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "getTargetPrice",
+      args: [
+        currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
+      ],
+    }) as GeneralTypes.ReadContractTypes;
 
-  const {
-    data: getRoundBiddersCount,
-    error: getRoundBiddersCountError,
-    // isLoading: isRoundBidderLoading,
-    refetch: refetchRoundBidder,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "getRoundBiddersCount",
-  }) as GeneralTypes.ReadContractTypes;
+    const {
+      data: getRoundBiddersCount,
+      error: getRoundBiddersCountError,
+      // isLoading: isRoundBidderLoading,
+      refetch: refetchRoundBidder,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "getRoundBiddersCount",
+    }) as GeneralTypes.ReadContractTypes;
 
-  const {
-    data: winner,
-    error: winnerError,
-    // isLoading: isWinnerLoading,
-    refetch: refetchWinner,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "winner",
-  }) as GeneralTypes.ReadContractTypes;
+    const {
+      data: winner,
+      error: winnerError,
+      // isLoading: isWinnerLoading,
+      refetch: refetchWinner,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "winner",
+    }) as GeneralTypes.ReadContractTypes;
 
-  const rounderBidderContracts = useMemo(() => {
-    return Array.from({ length: Number(getRoundBiddersCount) }, (_, index) => {
-      return {
-        address: auctionAddress as `0x${string}`,
-        abi: CharterAuctionABI as Abi,
-        functionName: "getRoundBidder",
-        args: [
-          currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
-          index,
-        ],
-      };
+    const rounderBidderContracts = useMemo(() => {
+      return Array.from(
+        { length: Number(getRoundBiddersCount) },
+        (_, index) => {
+          return {
+            address: auctionAddress as `0x${string}`,
+            abi: CharterAuctionABI as Abi,
+            functionName: "getRoundBidder",
+            args: [
+              currentRound !== undefined
+                ? BigInt(Number(currentRound))
+                : BigInt(0),
+              index,
+            ],
+          };
+        }
+      );
+    }, [getRoundBiddersCount, currentRound, auctionAddress]);
+
+    const {
+      data: rounderBidderContractsData,
+      error: rounderBidderContractsError,
+      refetch: refetchRounderBidderContracts,
+    } = useReadContracts({
+      contracts: rounderBidderContracts,
     });
-  }, [getRoundBiddersCount, currentRound, auctionAddress]);
 
-  const {
-    data: rounderBidderContractsData,
-    error: rounderBidderContractsError,
-    refetch: refetchRounderBidderContracts,
-  } = useReadContracts({
-    contracts: rounderBidderContracts,
-  });
-
-  const {
-    data: myBidderIndexData,
-    error: myBidderIndexError,
-    refetch: refetchMyBidderIndex,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "getRoundBidderBidPricesCount",
-    args: [
+    const {
+      data: myBidderIndexData,
+      error: myBidderIndexError,
+      refetch: refetchMyBidderIndex,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "getRoundBidderBidPricesCount",
+      args: [
         currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
         myBidderIndex !== undefined ? BigInt(myBidderIndex) : undefined,
       ],
     }) as GeneralTypes.ReadContractTypes;
 
-  const {
-    data: rounderBidderBidPrice,
-    error: rounderBidderBidPriceError,
-    refetch: refetchRounderBidderBidPrice,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "getRoundBidderBidPrice",
-    args: [
+    const {
+      data: rounderBidderBidPrice,
+      error: rounderBidderBidPriceError,
+      refetch: refetchRounderBidderBidPrice,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "getRoundBidderBidPrice",
+      args: [
         currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
         myBidderIndex !== undefined ? BigInt(myBidderIndex) : undefined,
         myLatestBidPosition !== undefined
-          ? BigInt(myLatestBidPosition)
+          ? BigInt(myLatestBidPosition !== 0 ? myLatestBidPosition - 1 : 0)
           : undefined,
       ],
     }) as GeneralTypes.ReadContractTypes;
 
-  useEffect(() => {
-    if (rounderBidderContractsData) {
-      const myBidderIndex = rounderBidderContractsData.findIndex(
-        (contract) => contract.result === address
-      );
-      setMyBidderIndex(myBidderIndex);
-    }
-  }, [rounderBidderContractsData, address]);
+    const {
+      data: actionCount,
+      error: actionCountError,
+      refetch: refetchActionCount,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "getActionCount",
+      args: [
+        currentRound !== undefined ? BigInt(Number(currentRound)) : BigInt(0),
+      ],
+    }) as GeneralTypes.ReadContractTypes;
 
-  useEffect(() => {
-    if (myBidderIndexData) {
-      setMyLatestBidPosition(Number(myBidderIndexData) - 1);
-    }
-  }, [myBidderIndexData]);
+    const {
+      data: roundPositionsCount,
+      error: roundPositionsCountError,
+      // isLoading: isRoundPositionsCountLoading,
+      refetch: refetchRoundPositionsCount,
+    } = useReadContract({
+      address: auctionAddress as `0x${string}`,
+      abi: CharterAuctionABI as Abi,
+      functionName: "getRoundPositionsCount",
+      args: [currentRound],
+    }) as GeneralTypes.ReadContractTypes;
 
-  useEffect(() => {
-    if (targetPriceError) {
-      toast.error("Failed to fetch target price.", {
-        id: "targetPriceLoading",
-      });
-    }
+    useEffect(() => {
+      if (rounderBidderContractsData) {
+        const myBidderIndex = rounderBidderContractsData.findIndex(
+          (contract) => contract.result === address
+        );
+        setMyBidderIndex(myBidderIndex);
+      }
+    }, [rounderBidderContractsData, address]);
 
-    if (isBlindRoundEndedError) {
-      toast.error("Failed to fetch isBlindRoundEnded.", {
-        id: "isBlindRoundEndedLoading",
-      });
-    }
+    useEffect(() => {
+      if (myBidderIndexData) {
+        setMyLatestBidPosition(Number(myBidderIndexData) - 1);
+      }
+    }, [myBidderIndexData]);
 
-    if (getRoundBiddersCountError) {
-      toast.error("Failed to fetch getRoundBiddersCount.", {
-        id: "getRoundBiddersCountLoading",
-      });
-    }
+    useEffect(() => {
+      if (targetPriceError) {
+        toast.error("Failed to fetch target price.", {
+          id: "targetPriceLoading",
+        });
+      }
 
-    if (rounderBidderContractsError) {
-      toast.error("Failed to fetch rounderBidderContracts.", {
-        id: "rounderBidderContractsLoading",
-      });
-    }
+      if (isBlindRoundEndedError) {
+        toast.error("Failed to fetch isBlindRoundEnded.", {
+          id: "isBlindRoundEndedLoading",
+        });
+      }
 
-    if (rounderBidderBidPriceError) {
-      toast.error("Failed to fetch rounderBidderBidPrice.", {
-        id: "rounderBidderBidPriceLoading",
-      });
-    }
+      if (getRoundBiddersCountError) {
+        toast.error("Failed to fetch getRoundBiddersCount.", {
+          id: "getRoundBiddersCountLoading",
+        });
+      }
 
-    if (winnerError) {
-      toast.error("Failed to fetch winner.", {
-        id: "winnerLoading",
-      });
-    }
+      if (rounderBidderContractsError) {
+        toast.error("Failed to fetch rounderBidderContracts.", {
+          id: "rounderBidderContractsLoading",
+        });
+      }
 
-    if (stakedFundsError) {
-      toast.error("Failed to fetch staked funds.", {
-        id: "stakedFundsLoading",
-      });
-    }
-  }, [
-    targetPriceError,
-    isBlindRoundEndedError,
-    getRoundBiddersCountError,
-    rounderBidderContractsError,
-    rounderBidderBidPriceError,
-    myBidderIndexError,
-    winnerError,
-    stakedFundsError,
-  ]);
+      if (rounderBidderBidPriceError) {
+        toast.error("Failed to fetch rounderBidderBidPrice.", {
+          id: "rounderBidderBidPriceLoading",
+        });
+      }
 
-  useEffect(() => {
-    const roundValue = isBlindRoundEnded
-      ? (Number(currentRound) + 1)?.toString() || "0"
-      : "Blind Round";
+      if (winnerError) {
+        toast.error("Failed to fetch winner.", {
+          id: "winnerLoading",
+        });
+      }
 
-    const formattedTargetPrice = targetPrice
-      ? formatUnits(targetPrice as bigint, Number(usdtDecimals))
-      : 0;
-    const targetPriceValue = formattedWithCurrency(
-      Number(formattedTargetPrice)
-    );
+      if (stakedFundsError) {
+        toast.error("Failed to fetch staked funds.", {
+          id: "stakedFundsLoading",
+        });
+      }
 
-    const myPositionValue = formattedWithCurrency(
-      rounderBidderBidPrice
-        ? Number(
-            formatUnits(rounderBidderBidPrice as bigint, Number(usdtDecimals))
-          )
-        : 0
-    );
+      if (actionCountError) {
+        toast.error("Failed to fetch action count.", {
+          id: "actionCountLoading",
+        });
+      }
 
-    const stakedFundsValue = formattedWithCurrency(
-      stakedFunds
-        ? Number(formatUnits(stakedFunds as bigint, Number(usdtDecimals)))
-        : 0
-    );
-
-    setRoundInfo([
-      { label: "Round:", value: roundValue },
-      { label: "Target Price:", value: targetPriceValue },
-      { label: "My Position:", value: myPositionValue },
-      { label: "Winner:", value: winner as `0x${string}` },
-      { label: "Staked Funds:", value: stakedFundsValue },
+      if (roundPositionsCountError) {
+        toast.error("Failed to fetch round positions count.", {
+          id: "roundPositionsCountLoading",
+        });
+      }
+    }, [
+      targetPriceError,
+      isBlindRoundEndedError,
+      getRoundBiddersCountError,
+      rounderBidderContractsError,
+      rounderBidderBidPriceError,
+      myBidderIndexError,
+      winnerError,
+      stakedFundsError,
+      actionCountError,
+      roundPositionsCountError,
     ]);
-  }, [
-    isBlindRoundEnded,
-    currentRound,
-    targetPrice,
-    myLatestBidPosition,
-    usdtDecimals,
-    rounderBidderBidPrice,
-    winner,
-    stakedFunds,
-  ]);
 
-  const refreshRoundInfo = () => {
-    refetchIsBlindRoundEnded?.();
-    refetchStakedFunds?.();
-    refetchTargetPrice?.();
-    refetchRoundBidder?.();
-    refetchWinner?.();
-    refetchRounderBidderContracts?.();
-    refetchMyBidderIndex?.();
-    refetchRounderBidderBidPrice?.();
-  };
+    useEffect(() => {
+      const roundValue = isBlindRoundEnded
+        ? (Number(currentRound) + 1)?.toString() || "0"
+        : "Blind Round";
 
-  // Expose refreshRoundInfo through ref
-  useEffect(() => {
-    if (typeof ref === 'object' && ref?.current) {
-      ref.current.refreshRoundInfo = refreshRoundInfo;
-    }
-  }, [ref]);
+      const formattedTargetPrice = targetPrice
+        ? formatUnits(targetPrice as bigint, Number(usdtDecimals))
+        : 0;
+      const targetPriceValue = formattedWithCurrency(
+        Number(formattedTargetPrice)
+      );
 
-  return (
-    <div className="flex flex-wrap justify-center gap-6">
-      {roundInfo.map((item, index) => (
-        <div key={index} className="flex gap-6">
-          <span className="text-sm text-white font-bold">{item.label}</span>
-          <span className="text-sm text-white font-normal">{item.value}</span>
-        </div>
-      ))}
-    </div>
-  );
-});
+      const myPositionValue = formattedWithCurrency(
+        rounderBidderBidPrice
+          ? Number(
+              formatUnits(rounderBidderBidPrice as bigint, Number(usdtDecimals))
+            )
+          : 0
+      );
 
-RoundInfo.displayName = 'RoundInfo';
+      const stakedFundsValue = formattedWithCurrency(
+        stakedFunds
+          ? Number(formatUnits(stakedFunds as bigint, Number(usdtDecimals)))
+          : 0
+      );
+
+      setRoundInfo([
+        { label: "Round:", value: roundValue },
+        { label: "Target Price:", value: targetPriceValue },
+        { label: "My Position:", value: myPositionValue },
+        { label: "Winner:", value: winner as `0x${string}` },
+        { label: "Staked Funds:", value: stakedFundsValue },
+        {
+          label: "Action Left:",
+          value: (Number(roundPositionsCount) - Number(actionCount)).toString(),
+        },
+      ]);
+    }, [
+      isBlindRoundEnded,
+      currentRound,
+      targetPrice,
+      myLatestBidPosition,
+      usdtDecimals,
+      rounderBidderBidPrice,
+      winner,
+      stakedFunds,
+      actionCount,
+      roundPositionsCount,
+    ]);
+
+    const refreshRoundInfo = () => {
+      refetchIsBlindRoundEnded?.();
+      refetchStakedFunds?.();
+      refetchTargetPrice?.();
+      refetchRoundBidder?.();
+      refetchWinner?.();
+      refetchRounderBidderContracts?.();
+      refetchMyBidderIndex?.();
+      refetchRounderBidderBidPrice?.();
+      refetchActionCount?.();
+      refetchRoundPositionsCount?.();
+    };
+
+    // Expose refreshRoundInfo through ref
+    useEffect(() => {
+      if (typeof ref === "object" && ref?.current) {
+        ref.current.refreshRoundInfo = refreshRoundInfo;
+      }
+    }, [ref]);
+
+    return (
+      <div className="flex flex-wrap justify-center gap-6">
+        {roundInfo.map((item, index) => (
+          <div key={index} className="flex gap-6">
+            <span className="text-sm text-white font-bold">{item.label}</span>
+            <span className="text-sm text-white font-normal">{item.value}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+);
+
+RoundInfo.displayName = "RoundInfo";
 
 export default RoundInfo;
