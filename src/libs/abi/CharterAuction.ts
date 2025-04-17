@@ -371,7 +371,12 @@ export const CharterAuctionABI = [
   {
     "type": "function",
     "name": "getRoundBiddersCount",
-    "inputs": [],
+    "inputs": [{
+      "name": "round",
+      "type": "uint256",
+      "internalType": "uint256"
+    }
+    ],
     "outputs": [
       {
         "name": "",
