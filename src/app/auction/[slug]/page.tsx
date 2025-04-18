@@ -265,6 +265,7 @@ export default function AuctionByIdPage() {
       bidActivityRef.current?.refreshBidActivity();
       // Refresh auction info to update the blind bid data
       auctionInfoRef.current?.refreshAuctionInfo();
+      roundInfoRef.current?.refreshRoundInfo();
     },
   });
 
