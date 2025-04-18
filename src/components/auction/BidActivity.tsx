@@ -1,7 +1,13 @@
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { formattedWithCurrency } from "@/src/utils/utils";
-import { forwardRef, useEffect, useMemo, useState } from "react";
+import {
+  forwardRef,
+  useEffect,
+  useMemo,
+  useState,
+  useImperativeHandle,
+} from "react";
 import { toast } from "sonner";
 import { Abi, formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
@@ -66,7 +72,7 @@ const BidActivity = forwardRef<
       .sort((a, b) => b.price - a.price)
       .map((position) => ({
         ...position,
-        seat: (position.index).toString().padStart(3, "0"),
+        seat: position.index.toString().padStart(3, "0"),
         price: formattedWithCurrency(position.price),
       }));
 
@@ -87,11 +93,10 @@ const BidActivity = forwardRef<
     }
   }, [roundPositionBidPriceError, roundPositionsCountError]);
 
-  useEffect(() => {
-    if (typeof ref === "object" && ref?.current) {
-      ref.current.refreshBidActivity = refreshBidActivity;
-    }
-  }, [ref]);
+  // Use useImperativeHandle to expose methods to parent component through ref
+  useImperativeHandle(ref, () => ({
+    refreshBidActivity,
+  }));
 
   return (
     <div>

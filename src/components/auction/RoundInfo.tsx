@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useState, forwardRef } from "react";
-import { toast } from "sonner";
 import {
-  useAccount,
-  // useAccount,
-  useReadContract,
-  useReadContracts,
-} from "wagmi";
+  useEffect,
+  useMemo,
+  useState,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
+import { toast } from "sonner";
+import { useAccount, useReadContract, useReadContracts } from "wagmi";
 
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
@@ -331,12 +332,10 @@ const RoundInfo = forwardRef<{ refreshRoundInfo: () => void }, RoundInfoProps>(
       refetchRoundPositionsCount?.();
     };
 
-    // Expose refreshRoundInfo through ref
-    useEffect(() => {
-      if (typeof ref === "object" && ref?.current) {
-        ref.current.refreshRoundInfo = refreshRoundInfo;
-      }
-    }, [ref]);
+    // Use useImperativeHandle to expose methods to parent component through ref
+    useImperativeHandle(ref, () => ({
+      refreshRoundInfo,
+    }));
 
     return (
       <div className="flex flex-wrap justify-center gap-6">
