@@ -1,8 +1,9 @@
 "use client";
 
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Abi } from "viem";
 import {
@@ -11,7 +12,6 @@ import {
   useWatchContractEvent,
   useWriteContract,
 } from "wagmi";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 import AuctionInfo from "@/src/components/auction/AuctionInfo";
 import BidActivity from "@/src/components/auction/BidActivity";
@@ -300,7 +300,6 @@ export default function AuctionByIdPage() {
         </h3>
         <ConnectButton />
       </header>
-
       <div className="mt-8 flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
           <Link href="/auction">
