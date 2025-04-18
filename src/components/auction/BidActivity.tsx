@@ -57,17 +57,20 @@ const BidActivity = forwardRef<
   useEffect(() => {
     if (!roundPositionBidPrice) return;
 
-    setRoundPositions(
-      roundPositionBidPrice
-        .filter((bidPrice) => bidPrice.status === "success")
-        .map((bidPrice, index) => ({
-          seat: index.toString().padStart(3, "0"),
-          price: formattedWithCurrency(
-            Number(formatUnits(bidPrice.result, Number(usdtDecimals)))
-          ),
-          index: index,
-        }))
-    );
+    const sortedPositions = roundPositionBidPrice
+      .filter((bidPrice) => bidPrice.status === "success")
+      .map((bidPrice, index) => ({
+        price: Number(formatUnits(bidPrice.result, Number(usdtDecimals))),
+        index: index,
+      }))
+      .sort((a, b) => b.price - a.price)
+      .map((position) => ({
+        ...position,
+        seat: (position.index).toString().padStart(3, "0"),
+        price: formattedWithCurrency(position.price),
+      }));
+
+    setRoundPositions(sortedPositions);
   }, [roundPositionBidPrice, usdtDecimals]);
 
   useEffect(() => {
