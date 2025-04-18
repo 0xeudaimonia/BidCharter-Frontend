@@ -2,6 +2,8 @@ import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   CartesianGrid,
   ComposedChart,
@@ -16,12 +18,14 @@ import { Abi, formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 
 interface BidChartProps {
-  chartData: CharterAuctionTypes.ChartDataItem[];
   auctionAddress: `0x${string}`;
   usdtDecimals: bigint;
 }
 
 const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
+  const [chartData, setChartData] = useState<
+    CharterAuctionTypes.ChartDataItem[]
+  >([]);
   const [graphbarData, setGraphbarData] = useState<
     CharterAuctionTypes.GraphbarItem[]
   >([]);
@@ -58,7 +62,7 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
 
   useEffect(() => {
     if (targetPrices) {
-      setGraphbarData(
+      setChartData(
         targetPrices
           .filter((targetPrice) => targetPrice.status === "success")
           .map((targetPrice, index) => ({
@@ -67,6 +71,21 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
               formatUnits(targetPrice.result, Number(usdtDecimals))
             ),
             fillValue: 1,
+          }))
+      );
+
+      setGraphbarData(
+        targetPrices
+          .filter((targetPrice) => targetPrice.status === "success")
+          .map((targetPrice, index) => ({
+            round: `R${(index + 1).toString().padStart(2, "0")}`,
+            price: Number(
+              formatUnits(targetPrice.result, Number(usdtDecimals))
+            ),
+            leftBid: Number(
+              formatUnits(targetPrice.result, Number(usdtDecimals))
+            ),
+            rightBid: 0,
           }))
       );
     }
@@ -90,7 +109,7 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
       <div className="w-full sm:h-[350px] h-[300px]">
         <ResponsiveContainer width="100%">
           <ComposedChart
-            data={graphbarData}
+            data={chartData}
             margin={{ top: 20, right: 0, left: 0, bottom: 20 }}
           >
             <CartesianGrid stroke="none" />
@@ -126,10 +145,10 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
         </ResponsiveContainer>
       </div>
 
-      {/* <div className="w-full sm:h-[250px] h-[200px] -mt-5 relative">
+      <div className="w-full sm:h-[250px] h-[200px] -mt-5 relative">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={chartData}
+            data={graphbarData}
             margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
           >
             <CartesianGrid stroke="#444" strokeDasharray="3 3" />
@@ -174,7 +193,7 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
         <div className="absolute top-2/6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
           <span className="text-sm font-bold text-white">{0}</span>
         </div>
-      </div> */}
+      </div>
     </div>
   );
 };

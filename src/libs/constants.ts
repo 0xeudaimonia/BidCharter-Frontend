@@ -51,45 +51,8 @@ export const roundInfo: {
   auctionTime: "03:11:28",
 };
 
-export const chartData: CharterAuctionTypes.ChartDataItem[] = [
-  { round: "R01", price: 12, leftBid: 20, rightBid: 0 },
-  { round: "R02", price: 14, leftBid: 18, rightBid: 0 },
-  { round: "R03", price: 16, leftBid: 15, rightBid: 0 },
-  { round: "R04", price: 18, leftBid: 13, rightBid: 0 },
-  { round: "R05", price: 20, leftBid: 11, rightBid: 0 },
-  { round: "R06", price: 21, leftBid: 9, rightBid: 0 },
-  { round: "R07", price: 22, leftBid: 0, rightBid: 5 },
-  { round: "R08", price: 23, leftBid: 0, rightBid: 8 },
-  { round: "R09", price: 24, leftBid: 0, rightBid: 12 },
-  { round: "R10", price: 25, leftBid: 0, rightBid: 16 },
-  { round: "R11", price: 27, leftBid: 0, rightBid: 20 },
-  { round: "R12", price: 29, leftBid: 0, rightBid: 24 },
-];
-export const graphbarData: CharterAuctionTypes.GraphbarItem[] = [
-  { round: "R01", price: 12, fillValue: 1 },
-  { round: "R02", price: 14, fillValue: 1 },
-  { round: "R03", price: 16, fillValue: 1 },
-  { round: "R04", price: 18, fillValue: 1 },
-  { round: "R05", price: 20, fillValue: 1 },
-  { round: "R06", price: 21, fillValue: 1 },
-  { round: "R07", price: 22, fillValue: 1 },
-  { round: "R08", price: 23, fillValue: 1 },
-  { round: "R09", price: 24, fillValue: 1 },
-  { round: "R10", price: 25, fillValue: 1 },
-  { round: "R11", price: 27, fillValue: 1 },
-  { round: "R12", price: 29, fillValue: 1 },
-];
-
 export const bidPositions: CharterAuctionTypes.Position[] = [
-  { seat: "001", price: "$13,579.15", index: 0 },
-  { seat: "002", price: "$12,997.58", index: 1 },
-  { seat: "004", price: "$12,997.58", index: 2 },
-  { seat: "005", price: "$12,997.58", index: 3 },
-  { seat: "006", price: "$12,997.58", index: 4 },
-  { seat: "007", price: "$12,997.58", index: 5 },
-  { seat: "008", price: "$12,997.58", index: 6 },
-  { seat: "009", price: "$12,997.58", index: 7 },
-  { seat: "010", price: "$12,997.58", index: 9 },
-  { seat: "011", price: "$12,997.58", index: 10 },
-  { seat: "012", price: "$12,997.58", index: 11 },
+  { seat: "001", price: "$13,579.15" },
+  { seat: "002", price: "$12,997.58" },
+  { seat: "004", price: "$12,997.58" },
 ];
