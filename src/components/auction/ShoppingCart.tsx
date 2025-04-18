@@ -42,7 +42,7 @@ export default function ShoppingCart({
     address: auctionAddress as `0x${string}`,
     abi: CharterAuctionABI as Abi,
     functionName: "getNextPrice",
-    args: [address, shoppingCart.map((position) => BigInt(position.index))],
+    args: [address, shoppingCart.map((position) => BigInt(position.seat))],
   }) as GeneralTypes.ReadContractTypes;
 
   const handleApprove = () => {
@@ -78,7 +78,7 @@ export default function ShoppingCart({
           address: auctionAddress as `0x${string}`,
           abi: CharterAuctionABI as Abi,
           functionName: "bidPosition",
-          args: [BigInt(shoppingCart[0].index)],
+          args: [BigInt(shoppingCart[0].seat)],
         },
         {
           // onSuccess: () => {
@@ -96,7 +96,7 @@ export default function ShoppingCart({
           address: auctionAddress as `0x${string}`,
           abi: CharterAuctionABI as Abi,
           functionName: "bidPositions",
-          args: [shoppingCart.map((item) => BigInt(item.index))],
+          args: [shoppingCart.map((item) => BigInt(item.seat))],
         },
         {
           // onSuccess: () => {
