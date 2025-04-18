@@ -66,9 +66,10 @@ export type RoundInfoItem = {
 
 export type GraphbarItem = {
   round: string;
-  price: number;
-  leftBid: number;
-  rightBid: number;
+  target: number;
+  highest: number;
+  lowest: number;
+  fillValue: number;
 };
 
 export type ChartDataItem = {
