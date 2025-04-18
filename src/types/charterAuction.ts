@@ -64,14 +64,15 @@ export type RoundInfoItem = {
   value: string;
 };
 
-export type ChartDataItem = {
+export type GraphbarItem = {
   round: string;
-  price: number;
-  leftBid: number;
-  rightBid: number;
+  target: number;
+  highest: number;
+  lowest: number;
+  fillValue: number;
 };
 
-export type GraphbarItem = {
+export type ChartDataItem = {
   round: string;
   price: number;
   fillValue: number;

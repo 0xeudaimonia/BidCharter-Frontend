@@ -2,6 +2,8 @@ import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 import { useEffect, useMemo, useState } from "react";
 import {
+  Area,
+  AreaChart,
   Bar,
   CartesianGrid,
   ComposedChart,
@@ -16,12 +18,14 @@ import { Abi, formatUnits } from "viem";
 import { useReadContract, useReadContracts } from "wagmi";
 
 interface BidChartProps {
-  chartData: CharterAuctionTypes.ChartDataItem[];
   auctionAddress: `0x${string}`;
   usdtDecimals: bigint;
 }
 
 const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
+  const [chartData, setChartData] = useState<
+    CharterAuctionTypes.ChartDataItem[]
+  >([]);
   const [graphbarData, setGraphbarData] = useState<
     CharterAuctionTypes.GraphbarItem[]
   >([]);
@@ -37,40 +41,73 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
     functionName: "currentRound",
   }) as GeneralTypes.ReadContractTypes;
 
-  const roundTargetPriceContracts = useMemo(() => {
+  const roundPriceContracts = useMemo(() => {
     if (currentRound === undefined) return [];
-    return [...Array(Number(currentRound) + 1).keys()].map((round) => ({
-      address: auctionAddress as `0x${string}`,
-      abi: CharterAuctionABI as Abi,
-      functionName: "getTargetPrice",
-      args: [BigInt(Number(round))],
-    }));
+
+    const rounds = [...Array(Number(currentRound) + 1).keys()];
+    return rounds.flatMap((round) => [
+      {
+        address: auctionAddress as `0x${string}`,
+        abi: CharterAuctionABI as Abi,
+        functionName: "getTargetPrice",
+        args: [BigInt(round)],
+      },
+      {
+        address: auctionAddress as `0x${string}`,
+        abi: CharterAuctionABI as Abi,
+        functionName: "getRoundHighestValue",
+        args: [BigInt(round)],
+      },
+      {
+        address: auctionAddress as `0x${string}`,
+        abi: CharterAuctionABI as Abi,
+        functionName: "getRoundLowestValue",
+        args: [BigInt(round)],
+      }
+    ]);
   }, [currentRound, auctionAddress]);
 
   const {
-    data: targetPrices,
-    error: targetPriceError,
-    // isLoading: isTargetPriceLoading,
-    // refetch: refetchTargetPrice,
+    data: allPrices,
+    error: pricesError,
   } = useReadContracts({
-    contracts: roundTargetPriceContracts,
+    contracts: roundPriceContracts,
   }) as CharterAuctionTypes.FetchRoundBidData;
 
   useEffect(() => {
-    if (targetPrices) {
-      setGraphbarData(
-        targetPrices
-          .filter((targetPrice) => targetPrice.status === "success")
-          .map((targetPrice, index) => ({
-            round: `R${(index + 1).toString().padStart(2, "0")}`,
-            price: Number(
-              formatUnits(targetPrice.result, Number(usdtDecimals))
-            ),
-            fillValue: 1,
-          }))
-      );
+
+    if (!allPrices || !usdtDecimals) return;
+
+    const rounds = allPrices.length / 3; // Since we have 3 values per round
+    const chartPoints: CharterAuctionTypes.ChartDataItem[] = [];
+    const graphbarPoints: CharterAuctionTypes.GraphbarItem[] = [];
+
+    for (let i = 0; i < rounds; i++) {
+      const targetPrice = allPrices[i * 3]?.result;
+      const highestPrice = allPrices[i * 3 + 1]?.result;
+      const lowestPrice = allPrices[i * 3 + 2]?.result;
+      console.log("prices", i, targetPrice, highestPrice, lowestPrice);
+
+      if (targetPrice && highestPrice && lowestPrice) {
+        graphbarPoints.push({
+          round: `R${(i + 1).toString().padStart(2, "0")}`,
+          target: Number(formatUnits(targetPrice, Number(usdtDecimals))),
+          highest: Number(formatUnits(highestPrice, Number(usdtDecimals))),
+          lowest: Number(formatUnits(lowestPrice, Number(usdtDecimals))),
+          fillValue: 1,
+        });
+
+        chartPoints.push({
+          round: `R${(i + 1).toString().padStart(2, "0")}`,
+          price: Number(formatUnits(targetPrice, Number(usdtDecimals))),
+          fillValue: 1,
+        });
+      }
     }
-  }, [targetPrices, usdtDecimals]);
+
+    setChartData(chartPoints);
+    setGraphbarData(graphbarPoints);
+  }, [allPrices, usdtDecimals]);
 
   useEffect(() => {
     if (currentRoundError) {
@@ -78,19 +115,20 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
         id: "currentRoundLoading",
       });
     }
-    if (targetPriceError) {
-      toast.error("Failed to fetch target price.", {
-        id: "targetPriceLoading",
+    if (pricesError) {
+      toast.error("Failed to fetch prices.", {
+        id: "pricesLoading",
       });
     }
-  }, [currentRoundError, targetPriceError]);
+  }, [currentRoundError, pricesError]);
+
   return (
     <div>
       <h3 className="text-sm text-white font-bold px-5">Bidding Price Chart</h3>
       <div className="w-full sm:h-[350px] h-[300px]">
         <ResponsiveContainer width="100%">
           <ComposedChart
-            data={graphbarData}
+            data={chartData}
             margin={{ top: 20, right: 0, left: 0, bottom: 20 }}
           >
             <CartesianGrid stroke="none" />
@@ -126,10 +164,10 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
         </ResponsiveContainer>
       </div>
 
-      {/* <div className="w-full sm:h-[250px] h-[200px] -mt-5 relative">
+      <div className="w-full sm:h-[250px] h-[200px] -mt-5 relative">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart
-            data={chartData}
+            data={graphbarData}
             margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
           >
             <CartesianGrid stroke="#444" strokeDasharray="3 3" />
@@ -148,7 +186,7 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
             />
             <Area
               type="monotone"
-              dataKey="leftBid"
+              dataKey="highest"
               fill="#00ff00"
               stroke="#00ff00"
               fillOpacity={0.2}
@@ -156,7 +194,7 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
             />
             <Area
               type="monotone"
-              dataKey="rightBid"
+              dataKey="lowest"
               fill="#ff0000"
               stroke="#ff0000"
               fillOpacity={0.2}
@@ -164,17 +202,17 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
             />
             <Line
               type="monotone"
-              dataKey="price"
+              dataKey="target"
               stroke="#ffffff"
               strokeWidth={2}
               name=""
             />
           </AreaChart>
         </ResponsiveContainer>
-        <div className="absolute top-2/6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
+        {/* <div className="absolute top-2/6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
           <span className="text-sm font-bold text-white">{0}</span>
-        </div>
-      </div> */}
+        </div> */}
+      </div>
     </div>
   );
 };
