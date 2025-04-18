@@ -1,5 +1,5 @@
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
-import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
+import { CharterAuctionTypes } from "@/src/types";
 import { useEffect, useMemo, useState } from "react";
 import {
   Area,
@@ -15,31 +15,25 @@ import {
 } from "recharts";
 import { toast } from "sonner";
 import { Abi, formatUnits } from "viem";
-import { useReadContract, useReadContracts } from "wagmi";
+import { useReadContracts } from "wagmi";
 
 interface BidChartProps {
   auctionAddress: `0x${string}`;
   usdtDecimals: bigint;
+  currentRound: bigint;
 }
 
-const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
+const BidChart = ({
+  auctionAddress,
+  usdtDecimals,
+  currentRound,
+}: BidChartProps) => {
   const [chartData, setChartData] = useState<
     CharterAuctionTypes.ChartDataItem[]
   >([]);
   const [graphbarData, setGraphbarData] = useState<
     CharterAuctionTypes.GraphbarItem[]
   >([]);
-
-  const {
-    data: currentRound,
-    error: currentRoundError,
-    // isLoading: isCurrentRoundLoading,
-    // refetch: refetchCurrentRound,
-  } = useReadContract({
-    address: auctionAddress as `0x${string}`,
-    abi: CharterAuctionABI as Abi,
-    functionName: "currentRound",
-  }) as GeneralTypes.ReadContractTypes;
 
   const roundPriceContracts = useMemo(() => {
     if (currentRound === undefined) return [];
@@ -63,19 +57,15 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
         abi: CharterAuctionABI as Abi,
         functionName: "getRoundLowestValue",
         args: [BigInt(round)],
-      }
+      },
     ]);
   }, [currentRound, auctionAddress]);
 
-  const {
-    data: allPrices,
-    error: pricesError,
-  } = useReadContracts({
+  const { data: allPrices, error: pricesError } = useReadContracts({
     contracts: roundPriceContracts,
   }) as CharterAuctionTypes.FetchRoundBidData;
 
   useEffect(() => {
-
     if (!allPrices || !usdtDecimals) return;
 
     const rounds = allPrices.length / 3; // Since we have 3 values per round
@@ -110,17 +100,12 @@ const BidChart = ({ auctionAddress, usdtDecimals }: BidChartProps) => {
   }, [allPrices, usdtDecimals]);
 
   useEffect(() => {
-    if (currentRoundError) {
-      toast.error("Failed to fetch current round.", {
-        id: "currentRoundLoading",
-      });
-    }
     if (pricesError) {
       toast.error("Failed to fetch prices.", {
         id: "pricesLoading",
       });
     }
-  }, [currentRoundError, pricesError]);
+  }, [pricesError]);
 
   return (
     <div>

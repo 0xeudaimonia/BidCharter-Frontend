@@ -372,6 +372,7 @@ export default function AuctionByIdPage() {
           <BidChart
             auctionAddress={auctionAddress as `0x${string}`}
             usdtDecimals={usdtDecimals as bigint}
+            currentRound={currentRound as bigint}
           />
         </div>
         <div className="w-full md:w-[20%] flex flex-col justify-items-end sm:gap-[30%]">
