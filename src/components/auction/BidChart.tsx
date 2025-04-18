@@ -76,7 +76,6 @@ const BidChart = ({
       const targetPrice = allPrices[i * 3]?.result;
       const highestPrice = allPrices[i * 3 + 1]?.result;
       const lowestPrice = allPrices[i * 3 + 2]?.result;
-      console.log("prices", i, targetPrice, highestPrice, lowestPrice);
 
       if (targetPrice && highestPrice && lowestPrice) {
         graphbarPoints.push({
