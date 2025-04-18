@@ -64,9 +64,9 @@ const BidActivity = forwardRef<
         index: index,
       }))
       .sort((a, b) => b.price - a.price)
-      .map((position, index) => ({
+      .map((position) => ({
         ...position,
-        seat: (index + 1).toString().padStart(3, "0"),
+        seat: (position.index).toString().padStart(3, "0"),
         price: formattedWithCurrency(position.price),
       }));
 
