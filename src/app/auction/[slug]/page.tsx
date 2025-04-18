@@ -253,6 +253,8 @@ export default function AuctionByIdPage() {
       console.log("NewRoundStarted event:", logs);
       toast.success("New round started.");
       refetchCurrentRound?.();
+      auctionInfoRef.current?.refreshAuctionInfo();
+      bidActivityRef.current?.refreshBidActivity();
     },
   });
 
