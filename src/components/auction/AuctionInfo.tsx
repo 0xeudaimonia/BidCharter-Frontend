@@ -1,6 +1,6 @@
 "use client";
 
-import { forwardRef, useEffect, useState } from "react";
+import { forwardRef, useEffect, useState, useImperativeHandle } from "react";
 import {
   // useAccount,
   useReadContract,
@@ -93,7 +93,9 @@ const AuctionInfo = forwardRef<
 
   useEffect(() => {
     if (nftAddressError) {
-      toast.error("Failed to fetch NFT address.", { id: "nftAddressLoading" });
+      toast.error("Failed to fetch NFT address.", {
+        id: "nftAddressLoading",
+      });
     }
 
     if (nftIdError) {
@@ -174,12 +176,10 @@ const AuctionInfo = forwardRef<
     }
   }, [tokenURI, entryFee, usdt?.decimals, reservePrice, raisedFunds]);
 
-  // Expose refreshAuctionInfo through ref
-  useEffect(() => {
-    if (typeof ref === "object" && ref?.current) {
-      ref.current.refreshAuctionInfo = refreshAuctionInfo;
-    }
-  }, [ref]);
+  // Use useImperativeHandle to expose methods to parent component through ref
+  useImperativeHandle(ref, () => ({
+    refreshAuctionInfo,
+  }));
 
   return (
     <div>
