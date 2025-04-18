@@ -24,7 +24,7 @@ import ShoppingCart from "@/src/components/auction/ShoppingCart";
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterFactoryABI } from "@/src/libs/abi/CharterFactory";
 import { ERC20ABI } from "@/src/libs/abi/ERC20";
-import { chartData, charterFactoryContractAddress } from "@/src/libs/constants";
+import { charterFactoryContractAddress } from "@/src/libs/constants";
 import { CharterAuctionTypes, GeneralTypes } from "@/src/types";
 
 interface RoundInfoRef extends HTMLDivElement {
@@ -370,7 +370,6 @@ export default function AuctionByIdPage() {
 
         <div className="w-full md:w-[40%]">
           <BidChart
-            chartData={chartData}
             auctionAddress={auctionAddress as `0x${string}`}
             usdtDecimals={usdtDecimals as bigint}
           />
