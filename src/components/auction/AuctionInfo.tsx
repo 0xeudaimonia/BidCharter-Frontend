@@ -1,3 +1,5 @@
+"use client";
+
 import { forwardRef, useEffect, useState } from "react";
 import {
   // useAccount,
@@ -21,7 +23,7 @@ interface AuctionInfoProps {
   usdt: GeneralTypes.Usdt;
 }
 
-const AunctionInfo = forwardRef<
+const AuctionInfo = forwardRef<
   { refreshAuctionInfo: () => void },
   AuctionInfoProps
 >(({ auctionAddress, entryFee, usdt }: AuctionInfoProps, ref) => {
@@ -202,6 +204,6 @@ const AunctionInfo = forwardRef<
   );
 });
 
-AunctionInfo.displayName = "AunctionInfo";
+AuctionInfo.displayName = "AuctionInfo";
 
-export default AunctionInfo;
+export default AuctionInfo;

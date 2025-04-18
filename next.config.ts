@@ -8,6 +8,11 @@ const nextConfig: NextConfig = {
         hostname: 'bidcharter.com',
         pathname: '/nft/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'github.com',
+        pathname: '/user-attachments/assets/**',
+      },
     ],
   },
 };
