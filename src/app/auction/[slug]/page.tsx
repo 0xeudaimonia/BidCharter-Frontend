@@ -68,7 +68,7 @@ export default function AuctionByIdPage() {
     }
 
     if (isTxSuccess) {
-      roundInfoRef.current?.refreshRoundInfo();
+      refetchCurrentRound?.();
       auctionInfoRef.current?.refreshAuctionInfo();
       bidActivityRef.current?.refreshBidActivity();
       toast.success("Transaction was successful!", {
@@ -347,6 +347,11 @@ export default function AuctionByIdPage() {
               }}
               entryFee={entryFee as bigint}
               usdtDecimals={usdtDecimals as bigint}
+              refetchInfos={() => {
+                refetchCurrentRound?.();
+                auctionInfoRef.current?.refreshAuctionInfo();
+                bidActivityRef.current?.refreshBidActivity();
+              }}
             />
           )}
           {!isBlindRoundEnded && (

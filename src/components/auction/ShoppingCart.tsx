@@ -22,6 +22,10 @@ interface IProps {
   usdtDecimals: bigint;
 }
 
+interface IProps {
+  refetchInfos: () => void;
+}
+
 export default function ShoppingCart({
   shoppingCart,
   auctionAddress,
@@ -29,6 +33,7 @@ export default function ShoppingCart({
   entryFee,
   handleRemovePosition,
   usdtDecimals,
+  refetchInfos,
 }: IProps) {
   const { data: writeTxHash, writeContract } = useWriteContract();
   const { address } = useAccount();
@@ -102,7 +107,8 @@ export default function ShoppingCart({
           // onSuccess: () => {
           //   // toast.success("Positions bid successfully.");
           // },
-          onError: () => {
+          onError(error, variables, context) {
+            console.log(error, variables, context);
             toast.error("Failed to bid positions.");
           },
         }
@@ -124,6 +130,7 @@ export default function ShoppingCart({
     }
 
     if (isTxSuccess) {
+      refetchInfos();
       toast.success("Transaction was successful!", {
         id: "transactionLoading",
       });
