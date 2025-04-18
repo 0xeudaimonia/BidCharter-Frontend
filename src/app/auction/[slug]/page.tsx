@@ -196,7 +196,7 @@ export default function AuctionByIdPage() {
 
   const handleRemovePosition = (position: CharterAuctionTypes.Position) => {
     setShoppingCart((prev) =>
-      prev.filter((item) => item.index !== position.index)
+      prev.filter((item) => item.seat !== position.seat)
     );
     toast.success("Position removed from shopping cart.");
   };
