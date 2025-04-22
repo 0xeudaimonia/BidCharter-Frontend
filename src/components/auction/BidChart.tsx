@@ -1,12 +1,12 @@
 import { CharterAuctionABI } from "@/src/libs/abi/CharterAuction";
 import { CharterAuctionTypes } from "@/src/types";
+import { formattedWithCurrency } from "@/src/utils/utils";
 import { useEffect, useMemo, useState } from "react";
 import {
-  Area,
-  AreaChart,
   Bar,
   CartesianGrid,
   ComposedChart,
+  Legend,
   Line,
   ResponsiveContainer,
   Tooltip,
@@ -60,7 +60,6 @@ const BidChart = ({
       },
     ]);
   }, [currentRound, auctionAddress]);
-
   const { data: allPrices, error: pricesError } = useReadContracts({
     contracts: roundPriceContracts,
   }) as CharterAuctionTypes.FetchRoundBidData;
@@ -136,7 +135,7 @@ const BidChart = ({
               barSize={40}
             />
             <Line
-              type="monotone"
+              type="linear"
               dataKey="price"
               stroke="#ffffff"
               strokeWidth={2}
@@ -148,54 +147,86 @@ const BidChart = ({
         </ResponsiveContainer>
       </div>
 
-      <div className="w-full sm:h-[250px] h-[200px] -mt-5 relative">
+      <div className="w-full mt-10 relative h-[300px] min-h-[300px]">
         <ResponsiveContainer width="100%" height="100%">
-          <AreaChart
+          <ComposedChart
             data={graphbarData}
-            margin={{ top: 10, right: 0, left: 0, bottom: 0 }}
+            margin={{ top: 20, right: 20, left: 20, bottom: 20 }}
           >
-            <CartesianGrid stroke="#444" strokeDasharray="3 3" />
+            <CartesianGrid horizontal={true} vertical={false} stroke="#444" />
             <XAxis
               dataKey="round"
               stroke="#ccc"
               axisLine={false}
               tickLine={false}
-              tick={false}
+              dy={10}
+              padding={{ left: 50, right: 50 }}
             />
-            <YAxis stroke="#ccc" axisLine={false} tickLine={false} hide />
+            <YAxis
+              stroke="#ccc"
+              axisLine={false}
+              tickLine={false}
+              tickFormatter={(value) => formattedWithCurrency(Number(value))}
+              width={80}
+            />
             <Tooltip
               contentStyle={{ backgroundColor: "#222", border: "none" }}
               labelStyle={{ color: "#fff" }}
               itemStyle={{ color: "#fff" }}
+              formatter={(value) => [
+                `${formattedWithCurrency(Number(value))}`,
+                null,
+              ]}
             />
-            <Area
-              type="monotone"
-              dataKey="highest"
-              fill="#00ff00"
-              stroke="#00ff00"
-              fillOpacity={0.2}
-              name=""
-            />
-            <Area
-              type="monotone"
-              dataKey="lowest"
-              fill="#ff0000"
-              stroke="#ff0000"
-              fillOpacity={0.2}
-              name=""
+            <Legend
+              verticalAlign="top"
+              align="center"
+              height={30}
+              iconType="rect"
+              iconSize={8}
+              wrapperStyle={{
+                fontSize: "12px",
+                display: "block",
+                top: 0,
+              }}
+              formatter={(value) => (
+                <span style={{ color: "#ccc", marginLeft: "4px" }}>
+                  {value}
+                </span>
+              )}
             />
             <Line
-              type="monotone"
-              dataKey="target"
-              stroke="#ffffff"
+              type="linear"
+              dataKey="highest"
+              stroke="#00ff00"
               strokeWidth={2}
-              name=""
+              name="Highest Position"
+              dot={false}
+              activeDot={{ r: 6 }}
+              isAnimationActive={true}
             />
-          </AreaChart>
+            <Line
+              type="linear"
+              dataKey="target"
+              stroke="#ffff00"
+              strokeWidth={2}
+              name="Target Value"
+              dot={false}
+              activeDot={{ r: 6 }}
+              isAnimationActive={true}
+            />
+            <Line
+              type="linear"
+              dataKey="lowest"
+              stroke="#ff0000"
+              strokeWidth={2}
+              name="Lowest Position"
+              dot={false}
+              activeDot={{ r: 6 }}
+              isAnimationActive={true}
+            />
+          </ComposedChart>
         </ResponsiveContainer>
-        {/* <div className="absolute top-2/6 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none">
-          <span className="text-sm font-bold text-white">{0}</span>
-        </div> */}
       </div>
     </div>
   );
