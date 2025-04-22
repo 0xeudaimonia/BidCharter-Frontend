@@ -240,7 +240,9 @@ export default function AuctionByIdPage() {
     eventName: "EndAuction",
     onLogs: (logs) => {
       console.log("EndAuction event:", logs);
-      roundInfoRef.current?.refreshRoundInfo();
+      refetchCurrentRound?.();
+      auctionInfoRef.current?.refreshAuctionInfo();
+      bidActivityRef.current?.refreshBidActivity();
     },
   });
 
